@@ -34,6 +34,9 @@ Project: **finnnguyen's 79NailsandHair Project** ([dashboard](https://supabase.c
 | `bookings` | Customer appointment requests from the booking wizard |
 | `booking_services` | Line items (one or more services) per booking |
 | `reviews` | Customer feedback — service rating/comment + separate website-experience rating/comment |
+| `staff_rotation` | Current-day staff presence, queue order, and partial-turn credit |
+| `walk_ins` | Walk-in queue, assignment, timing, and completion records |
+| `walk_in_services` | Service and charged-price line items for each walk-in |
 
 Row Level Security is on for every table:
 - `services`, `staff`, `staff_specialties`: public read
@@ -48,6 +51,7 @@ Schema changes should go through Supabase migrations (via the Supabase MCP tools
 - `/admin/login` — staff sign-in (Supabase Auth)
 - `/admin/bookings` — all bookings with an inline status dropdown (pending/confirmed/completed/cancelled)
 - `/admin/reviews` — moderation queue: approve/unapprove or delete submitted reviews
+- `/admin/turns` — live walk-in check-in, staff rotation, daily earnings, and turn corrections
 
 **Creating a staff login:** there's no self-serve sign-up. In the [Supabase dashboard → Authentication → Users](https://supabase.com/dashboard/project/chzoisvirymqgtsbnheu/auth/users), click **Add user → Create new user**, set an email/password, and toggle **Auto Confirm User** on.
 

@@ -29,6 +29,9 @@ export default async function AdminProtectedLayout({
             <Link href="/admin/reviews" className="text-foreground hover:text-brand">
               Reviews
             </Link>
+            <Link href="/admin/turns" className="text-foreground hover:text-brand">
+              Turns
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-4 text-sm">

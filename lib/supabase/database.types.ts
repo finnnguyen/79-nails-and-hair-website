@@ -192,6 +192,71 @@ export type Database = {
         }
         Relationships: []
       }
+      staff: {
+        Row: {
+          categories: Database["public"]["Enums"]["service_category"][]
+          created_at: string
+          id: string
+          name: string
+          photo_url: string | null
+          role: Database["public"]["Enums"]["staff_role"]
+          sort_order: number
+        }
+        Insert: {
+          categories?: Database["public"]["Enums"]["service_category"][]
+          created_at?: string
+          id: string
+          name: string
+          photo_url?: string | null
+          role: Database["public"]["Enums"]["staff_role"]
+          sort_order?: number
+        }
+        Update: {
+          categories?: Database["public"]["Enums"]["service_category"][]
+          created_at?: string
+          id?: string
+          name?: string
+          photo_url?: string | null
+          role?: Database["public"]["Enums"]["staff_role"]
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      staff_rotation: {
+        Row: {
+          last_turn_at: string
+          present: boolean
+          queue_position: number
+          rotation_date: string
+          staff_id: string
+          turn_credit: number
+        }
+        Insert: {
+          last_turn_at?: string
+          present?: boolean
+          queue_position?: number
+          rotation_date?: string
+          staff_id: string
+          turn_credit?: number
+        }
+        Update: {
+          last_turn_at?: string
+          present?: boolean
+          queue_position?: number
+          rotation_date?: string
+          staff_id?: string
+          turn_credit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_rotation_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: true
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_service_durations: {
         Row: {
           duration_minutes: number
@@ -228,36 +293,6 @@ export type Database = {
           },
         ]
       }
-      staff: {
-        Row: {
-          categories: Database["public"]["Enums"]["service_category"][]
-          created_at: string
-          id: string
-          name: string
-          photo_url: string | null
-          role: Database["public"]["Enums"]["staff_role"]
-          sort_order: number
-        }
-        Insert: {
-          categories?: Database["public"]["Enums"]["service_category"][]
-          created_at?: string
-          id: string
-          name: string
-          photo_url?: string | null
-          role: Database["public"]["Enums"]["staff_role"]
-          sort_order?: number
-        }
-        Update: {
-          categories?: Database["public"]["Enums"]["service_category"][]
-          created_at?: string
-          id?: string
-          name?: string
-          photo_url?: string | null
-          role?: Database["public"]["Enums"]["staff_role"]
-          sort_order?: number
-        }
-        Relationships: []
-      }
       staff_specialties: {
         Row: {
           category: Database["public"]["Enums"]["service_category"] | null
@@ -293,6 +328,92 @@ export type Database = {
           },
           {
             foreignKeyName: "staff_specialties_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      walk_in_services: {
+        Row: {
+          id: string
+          price: number
+          service_id: string | null
+          service_name: string
+          walk_in_id: string
+        }
+        Insert: {
+          id?: string
+          price: number
+          service_id?: string | null
+          service_name: string
+          walk_in_id: string
+        }
+        Update: {
+          id?: string
+          price?: number
+          service_id?: string | null
+          service_name?: string
+          walk_in_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "walk_in_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "walk_in_services_walk_in_id_fkey"
+            columns: ["walk_in_id"]
+            isOneToOne: false
+            referencedRelation: "walk_ins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      walk_ins: {
+        Row: {
+          completed_at: string | null
+          customer_name: string | null
+          duration_minutes: number
+          id: string
+          is_request: boolean
+          requested_at: string
+          staff_id: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["walk_in_status"]
+          total_price: number
+        }
+        Insert: {
+          completed_at?: string | null
+          customer_name?: string | null
+          duration_minutes: number
+          id?: string
+          is_request?: boolean
+          requested_at?: string
+          staff_id?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["walk_in_status"]
+          total_price?: number
+        }
+        Update: {
+          completed_at?: string | null
+          customer_name?: string | null
+          duration_minutes?: number
+          id?: string
+          is_request?: boolean
+          requested_at?: string
+          staff_id?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["walk_in_status"]
+          total_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "walk_ins_staff_id_fkey"
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
@@ -342,6 +463,7 @@ export type Database = {
       booking_status: "pending" | "confirmed" | "cancelled" | "completed"
       service_category: "Nail Services" | "Hair Services" | "Facial Services"
       staff_role: "Nail Tech" | "Hair Stylist" | "Hair Stylist & Nail Tech"
+      walk_in_status: "waiting" | "in_progress" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -472,6 +594,7 @@ export const Constants = {
       booking_status: ["pending", "confirmed", "cancelled", "completed"],
       service_category: ["Nail Services", "Hair Services", "Facial Services"],
       staff_role: ["Nail Tech", "Hair Stylist", "Hair Stylist & Nail Tech"],
+      walk_in_status: ["waiting", "in_progress", "completed", "cancelled"],
     },
   },
 } as const
