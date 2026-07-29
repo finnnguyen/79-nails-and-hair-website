@@ -462,6 +462,7 @@ export default function BookingWizard({
                 email,
                 phone,
                 staffId: selectedStaff.id,
+                staffName: selectedStaff.name,
                 date,
                 time,
                 services: selectedServices.map((s) => ({

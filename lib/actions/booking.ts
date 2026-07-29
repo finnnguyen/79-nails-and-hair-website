@@ -2,12 +2,14 @@
 
 import { randomUUID } from "node:crypto";
 import { supabase } from "@/lib/supabase/client";
+import { sendBookingEmails } from "@/lib/email";
 
 export type BookingInput = {
   name: string;
   email: string;
   phone: string;
   staffId: string;
+  staffName: string;
   date: string;
   time: string;
   services: { id: string; name: string; price: number }[];
@@ -61,6 +63,16 @@ export async function submitBooking(input: BookingInput): Promise<BookingResult>
   if (servicesError) {
     return { success: false, error: servicesError.message };
   }
+
+  await sendBookingEmails({
+    customerName: input.name,
+    customerEmail: input.email || null,
+    staffName: input.staffName,
+    date: input.date,
+    time: input.time,
+    services: input.services,
+    total,
+  });
 
   return { success: true, bookingId };
 }
