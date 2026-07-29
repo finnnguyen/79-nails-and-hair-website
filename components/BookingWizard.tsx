@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   SERVICE_CATEGORIES,
   type Service,
@@ -10,6 +10,7 @@ import { type Staff } from "@/lib/staff-data";
 import { getAvailability } from "@/lib/booking-availability";
 import CalendarPicker from "@/components/CalendarPicker";
 import { submitBooking } from "@/lib/actions/booking";
+import { getBookedSlots, type BookedSlot } from "@/lib/actions/availability";
 
 const STEPS = ["Service", "Staff", "Date & Time", "Your Info"] as const;
 
@@ -48,8 +49,35 @@ export default function BookingWizard({
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
 
-  const availability = useMemo(() => getAvailability(), []);
+  const baseAvailability = useMemo(() => getAvailability(), []);
+
+  // Refresh already-taken slots whenever the selected staff member changes.
+  useEffect(() => {
+    if (!staffId) return;
+    let cancelled = false;
+    getBookedSlots(staffId)
+      .then((slots) => {
+        if (!cancelled) setBookedSlots(slots);
+      })
+      .catch(() => {
+        if (!cancelled) setBookedSlots([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [staffId]);
+
+  const availability = useMemo(() => {
+    const taken = new Set(bookedSlots.map((b) => `${b.date}|${b.time}`));
+    return baseAvailability
+      .map((day) => ({
+        ...day,
+        times: day.times.filter((t) => !taken.has(`${day.date}|${t}`)),
+      }))
+      .filter((day) => day.times.length > 0);
+  }, [baseAvailability, bookedSlots]);
 
   const toggleService = (id: string) => {
     setServiceIds((prev) =>
@@ -266,7 +294,11 @@ export default function BookingWizard({
                 <li key={member.id}>
                   <button
                     type="button"
-                    onClick={() => setStaffId(member.id)}
+                    onClick={() => {
+                      setStaffId(member.id);
+                      setDate(null);
+                      setTime(null);
+                    }}
                     className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-colors ${
                       staffId === member.id
                         ? "border-brand bg-brand-tint"
@@ -442,7 +474,18 @@ export default function BookingWizard({
               if (result.success) {
                 setSubmitted(true);
               } else {
-                setSubmitError(result.error);
+                setSubmitError(
+                  result.slotTaken
+                    ? result.error
+                    : `Something went wrong: ${result.error}. Please try again.`
+                );
+                if (result.slotTaken && staffId) {
+                  setTime(null);
+                  setStep(2);
+                  getBookedSlots(staffId)
+                    .then(setBookedSlots)
+                    .catch(() => setBookedSlots([]));
+                }
               }
             }}
             disabled={!canContinue || submitting}
@@ -454,9 +497,7 @@ export default function BookingWizard({
       </div>
 
       {submitError && (
-        <p className="mt-4 text-right text-sm text-red-600">
-          Something went wrong: {submitError}. Please try again.
-        </p>
+        <p className="mt-4 text-right text-sm text-red-600">{submitError}</p>
       )}
     </div>
   );

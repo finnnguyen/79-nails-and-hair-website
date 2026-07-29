@@ -15,7 +15,7 @@ export type BookingInput = {
 
 export type BookingResult =
   | { success: true; bookingId: string }
-  | { success: false; error: string };
+  | { success: false; error: string; slotTaken?: boolean };
 
 export async function submitBooking(input: BookingInput): Promise<BookingResult> {
   const total = input.services.reduce((sum, s) => sum + s.price, 0);
@@ -37,6 +37,15 @@ export async function submitBooking(input: BookingInput): Promise<BookingResult>
   });
 
   if (bookingError) {
+    // Postgres unique_violation — the bookings_no_double_booking index caught
+    // a race: someone else booked this exact staff+date+time first.
+    if (bookingError.code === "23505") {
+      return {
+        success: false,
+        error: "That time was just booked by someone else — please pick another time.",
+        slotTaken: true,
+      };
+    }
     return { success: false, error: bookingError.message };
   }
 
