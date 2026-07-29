@@ -11,6 +11,8 @@ export type Service = {
   note?: string;
   /** Nail add-ons (gel, design, polish change...) — always paired with a core nail service. */
   addon?: boolean;
+  /** Default duration; a specific staff member may override this — see getEffectiveDuration. */
+  durationMinutes: number;
 };
 
 export const SERVICE_CATEGORIES: ServiceCategory[] = [
@@ -22,7 +24,7 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
 export async function getServices(): Promise<Service[]> {
   const { data, error } = await supabase
     .from("services")
-    .select("id, name, category, price, starting_at, note, addon")
+    .select("id, name, category, price, starting_at, note, addon, duration_minutes")
     .order("sort_order", { ascending: true });
 
   if (error) throw error;
@@ -35,5 +37,6 @@ export async function getServices(): Promise<Service[]> {
     startingAt: row.starting_at || undefined,
     note: row.note ?? undefined,
     addon: row.addon || undefined,
+    durationMinutes: row.duration_minutes,
   }));
 }

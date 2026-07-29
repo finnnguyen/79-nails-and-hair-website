@@ -61,8 +61,11 @@ export type Database = {
           customer_email: string | null
           customer_name: string
           customer_phone: string | null
+          duration_minutes: number
+          ends_at: string
           id: string
           staff_id: string | null
+          starts_at: string
           status: Database["public"]["Enums"]["booking_status"]
           total_price: number
         }
@@ -73,8 +76,11 @@ export type Database = {
           customer_email?: string | null
           customer_name: string
           customer_phone?: string | null
+          duration_minutes: number
+          ends_at: string
           id?: string
           staff_id?: string | null
+          starts_at: string
           status?: Database["public"]["Enums"]["booking_status"]
           total_price?: number
         }
@@ -85,8 +91,11 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string
           customer_phone?: string | null
+          duration_minutes?: number
+          ends_at?: string
           id?: string
           staff_id?: string | null
+          starts_at?: string
           status?: Database["public"]["Enums"]["booking_status"]
           total_price?: number
         }
@@ -149,6 +158,7 @@ export type Database = {
           addon: boolean
           category: Database["public"]["Enums"]["service_category"]
           created_at: string
+          duration_minutes: number
           id: string
           name: string
           note: string | null
@@ -160,6 +170,7 @@ export type Database = {
           addon?: boolean
           category: Database["public"]["Enums"]["service_category"]
           created_at?: string
+          duration_minutes?: number
           id: string
           name: string
           note?: string | null
@@ -171,6 +182,7 @@ export type Database = {
           addon?: boolean
           category?: Database["public"]["Enums"]["service_category"]
           created_at?: string
+          duration_minutes?: number
           id?: string
           name?: string
           note?: string | null
@@ -179,6 +191,42 @@ export type Database = {
           starting_at?: boolean
         }
         Relationships: []
+      }
+      staff_service_durations: {
+        Row: {
+          duration_minutes: number
+          id: string
+          service_id: string
+          staff_id: string
+        }
+        Insert: {
+          duration_minutes: number
+          id?: string
+          service_id: string
+          staff_id: string
+        }
+        Update: {
+          duration_minutes?: number
+          id?: string
+          service_id?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_service_durations_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_service_durations_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff: {
         Row: {
@@ -258,17 +306,23 @@ export type Database = {
         Row: {
           appointment_date: string | null
           appointment_time: string | null
+          ends_at: string | null
           staff_id: string | null
+          starts_at: string | null
         }
         Insert: {
           appointment_date?: string | null
           appointment_time?: string | null
+          ends_at?: string | null
           staff_id?: string | null
+          starts_at?: string | null
         }
         Update: {
           appointment_date?: string | null
           appointment_time?: string | null
+          ends_at?: string | null
           staff_id?: string | null
+          starts_at?: string | null
         }
         Relationships: [
           {

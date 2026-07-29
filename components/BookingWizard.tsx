@@ -7,10 +7,18 @@ import {
   type ServiceCategory,
 } from "@/lib/services-data";
 import { type Staff } from "@/lib/staff-data";
-import { getAvailability } from "@/lib/booking-availability";
+import {
+  getAvailability,
+  parseTimeToMinutes,
+  toPacificDateAndMinutes,
+} from "@/lib/booking-availability";
 import CalendarPicker from "@/components/CalendarPicker";
 import { submitBooking } from "@/lib/actions/booking";
-import { getBookedSlots, type BookedSlot } from "@/lib/actions/availability";
+import {
+  getBookedRanges,
+  getStaffDurationOverrides,
+  type BookedRange,
+} from "@/lib/actions/availability";
 
 const STEPS = ["Service", "Staff", "Date & Time", "Your Info"] as const;
 
@@ -49,35 +57,31 @@ export default function BookingWizard({
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
+  const [bookedRanges, setBookedRanges] = useState<BookedRange[]>([]);
+  const [durationOverrides, setDurationOverrides] = useState<Record<string, number>>({});
 
-  const baseAvailability = useMemo(() => getAvailability(), []);
-
-  // Refresh already-taken slots whenever the selected staff member changes.
+  // Refresh this staff member's busy ranges and duration overrides whenever
+  // the selected staff member changes.
   useEffect(() => {
     if (!staffId) return;
     let cancelled = false;
-    getBookedSlots(staffId)
-      .then((slots) => {
-        if (!cancelled) setBookedSlots(slots);
+    Promise.all([getBookedRanges(staffId), getStaffDurationOverrides(staffId)])
+      .then(([ranges, overrides]) => {
+        if (!cancelled) {
+          setBookedRanges(ranges);
+          setDurationOverrides(overrides);
+        }
       })
       .catch(() => {
-        if (!cancelled) setBookedSlots([]);
+        if (!cancelled) {
+          setBookedRanges([]);
+          setDurationOverrides({});
+        }
       });
     return () => {
       cancelled = true;
     };
   }, [staffId]);
-
-  const availability = useMemo(() => {
-    const taken = new Set(bookedSlots.map((b) => `${b.date}|${b.time}`));
-    return baseAvailability
-      .map((day) => ({
-        ...day,
-        times: day.times.filter((t) => !taken.has(`${day.date}|${t}`)),
-      }))
-      .filter((day) => day.times.length > 0);
-  }, [baseAvailability, bookedSlots]);
 
   const toggleService = (id: string) => {
     setServiceIds((prev) =>
@@ -85,11 +89,54 @@ export default function BookingWizard({
     );
   };
 
-  const selectedServices = services.filter((s) => serviceIds.includes(s.id));
+  const selectedServices = useMemo(
+    () => services.filter((s) => serviceIds.includes(s.id)),
+    [services, serviceIds]
+  );
   const selectedCategories = Array.from(
     new Set(selectedServices.map((s) => s.category))
   );
   const total = selectedServices.reduce((sum, s) => sum + s.price, 0);
+  const totalDuration = useMemo(
+    () =>
+      selectedServices.reduce(
+        (sum, s) => sum + (durationOverrides[s.id] ?? s.durationMinutes),
+        0
+      ) || 30,
+    [selectedServices, durationOverrides]
+  );
+
+  const baseAvailability = useMemo(
+    () => getAvailability(14, totalDuration),
+    [totalDuration]
+  );
+
+  const availability = useMemo(() => {
+    const rangesByDate = new Map<string, { start: number; end: number }[]>();
+    for (const range of bookedRanges) {
+      const start = toPacificDateAndMinutes(range.startsAt);
+      const end = toPacificDateAndMinutes(range.endsAt);
+      // Existing bookings never span midnight in this salon's hours, so
+      // start/end fall on the same Pacific-local date.
+      const list = rangesByDate.get(start.date) ?? [];
+      list.push({ start: start.minutes, end: end.minutes });
+      rangesByDate.set(start.date, list);
+    }
+
+    return baseAvailability
+      .map((day) => {
+        const busy = rangesByDate.get(day.date) ?? [];
+        const times = day.times.filter((t) => {
+          const candidateStart = parseTimeToMinutes(t);
+          const candidateEnd = candidateStart + totalDuration;
+          return !busy.some(
+            (b) => candidateStart < b.end && candidateEnd > b.start
+          );
+        });
+        return { ...day, times };
+      })
+      .filter((day) => day.times.length > 0);
+  }, [baseAvailability, bookedRanges, totalDuration]);
   const hasStartingAt = selectedServices.some((s) => s.startingAt);
 
   const categoryServices = services.filter((s) => s.category === activeCategory);
@@ -483,9 +530,9 @@ export default function BookingWizard({
                 if (result.slotTaken && staffId) {
                   setTime(null);
                   setStep(2);
-                  getBookedSlots(staffId)
-                    .then(setBookedSlots)
-                    .catch(() => setBookedSlots([]));
+                  getBookedRanges(staffId)
+                    .then(setBookedRanges)
+                    .catch(() => setBookedRanges([]));
                 }
               }
             }}

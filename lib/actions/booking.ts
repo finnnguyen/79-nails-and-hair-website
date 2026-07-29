@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { supabase } from "@/lib/supabase/client";
 import { sendBookingEmails } from "@/lib/email";
+import { getTotalDuration } from "@/lib/actions/availability";
 
 export type BookingInput = {
   name: string;
@@ -21,6 +22,13 @@ export type BookingResult =
 
 export async function submitBooking(input: BookingInput): Promise<BookingResult> {
   const total = input.services.reduce((sum, s) => sum + s.price, 0);
+  // Never trust a client-supplied duration — it directly gates the
+  // no-overlap database constraint, so it must be computed authoritatively.
+  const durationMinutes = await getTotalDuration(
+    input.staffId,
+    input.services.map((s) => s.id)
+  );
+
   // Bookings has no public SELECT policy (it holds other customers' contact
   // info), so we can't use .select() to read the row back after insert —
   // Postgres RLS rejects INSERT ... RETURNING without a matching SELECT
@@ -35,13 +43,19 @@ export async function submitBooking(input: BookingInput): Promise<BookingResult>
     staff_id: input.staffId,
     appointment_date: input.date,
     appointment_time: input.time,
+    duration_minutes: durationMinutes,
+    // Overwritten by the bookings_set_time_range_trigger from
+    // appointment_date/appointment_time/duration_minutes — placeholders
+    // only to satisfy the (required) insert type.
+    starts_at: new Date().toISOString(),
+    ends_at: new Date().toISOString(),
     total_price: total,
   });
 
   if (bookingError) {
-    // Postgres unique_violation — the bookings_no_double_booking index caught
-    // a race: someone else booked this exact staff+date+time first.
-    if (bookingError.code === "23505") {
+    // Postgres exclusion_violation — the bookings_no_overlap constraint
+    // caught a race: this staff member already has an overlapping booking.
+    if (bookingError.code === "23P01") {
       return {
         success: false,
         error: "That time was just booked by someone else — please pick another time.",

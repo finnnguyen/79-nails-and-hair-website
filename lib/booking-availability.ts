@@ -18,12 +18,51 @@ function formatTime(totalMinutes: number): string {
   return `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`;
 }
 
-function timesForDay(dayOfWeek: number): string[] {
+/** Inverse of formatTime — "9:15 AM" -> 555 (minutes since midnight). */
+export function parseTimeToMinutes(time: string): number {
+  const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) throw new Error(`Unparseable time: ${time}`);
+  const [, hourStr, minuteStr, period] = match;
+  let hour = Number(hourStr) % 12;
+  if (period.toUpperCase() === "PM") hour += 12;
+  return hour * 60 + Number(minuteStr);
+}
+
+const PACIFIC_PARTS = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Los_Angeles",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+/** Converts a UTC ISO timestamp into salon-local (Pacific) wall-clock date +
+ * minutes-since-midnight, so it's directly comparable with getAvailability's
+ * output. DST-safe via Intl's timezone database — no date library needed. */
+export function toPacificDateAndMinutes(isoString: string): {
+  date: string;
+  minutes: number;
+} {
+  const parts = PACIFIC_PARTS.formatToParts(new Date(isoString));
+  const get = (type: string) => parts.find((p) => p.type === type)!.value;
+  // formatToParts gives 24 -> "24" for midnight in some environments; normalize.
+  const hour = Number(get("hour")) % 24;
+  return {
+    date: `${get("year")}-${get("month")}-${get("day")}`,
+    minutes: hour * 60 + Number(get("minute")),
+  };
+}
+
+function timesForDay(dayOfWeek: number, durationMinutes: number): string[] {
   // Closed Monday
   if (dayOfWeek === 1) return [];
   // Open 9:10, so slots start at 9:15. Sunday closes at 6, otherwise 7.
   const closeMinutes = (dayOfWeek === 0 ? 18 : 19) * 60;
-  const lastStart = closeMinutes - 30; // last appointment must start 30 min before close
+  // The appointment must finish by close, so it can't start any later than
+  // close minus how long it actually takes.
+  const lastStart = closeMinutes - durationMinutes;
 
   const times: string[] = [];
   for (let mins = 9 * 60 + 15; mins <= lastStart; mins += 15) {
@@ -32,8 +71,9 @@ function timesForDay(dayOfWeek: number): string[] {
   return times;
 }
 
-/** Mock availability for the next `days` calendar days, skipping Mondays (closed). */
-export function getAvailability(days = 14): DayAvailability[] {
+/** Mock availability for the next `days` calendar days, skipping Mondays (closed).
+ * `durationMinutes` excludes start times that wouldn't finish before closing. */
+export function getAvailability(days = 14, durationMinutes = 30): DayAvailability[] {
   const result: DayAvailability[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -42,7 +82,7 @@ export function getAvailability(days = 14): DayAvailability[] {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
     const dayOfWeek = date.getDay();
-    const times = timesForDay(dayOfWeek);
+    const times = timesForDay(dayOfWeek, durationMinutes);
     if (times.length === 0) continue;
 
     result.push({
