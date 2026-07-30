@@ -22,6 +22,8 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable key>
 
 Get the publishable key from the [Supabase dashboard → Project Settings → API](https://supabase.com/dashboard/project/chzoisvirymqgtsbnheu/settings/api).
 
+**For CI**: the same two `NEXT_PUBLIC_SUPABASE_*` values must also be added as repo secrets (Settings → Secrets and variables → Actions) — several pages are statically prerendered and fetch from Supabase at build time, so `npm run build` fails in CI without real values.
+
 ## Database (Supabase)
 
 Project: **finnnguyen's 79NailsandHair Project** ([dashboard](https://supabase.com/dashboard/project/chzoisvirymqgtsbnheu)).
