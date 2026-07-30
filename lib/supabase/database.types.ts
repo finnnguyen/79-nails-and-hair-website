@@ -423,41 +423,16 @@ export type Database = {
       }
     }
     Views: {
-      booked_slots: {
-        Row: {
-          appointment_date: string | null
-          appointment_time: string | null
-          ends_at: string | null
-          staff_id: string | null
-          starts_at: string | null
-        }
-        Insert: {
-          appointment_date?: string | null
-          appointment_time?: string | null
-          ends_at?: string | null
-          staff_id?: string | null
-          starts_at?: string | null
-        }
-        Update: {
-          appointment_date?: string | null
-          appointment_time?: string | null
-          ends_at?: string | null
-          staff_id?: string | null
-          starts_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_staff_id_fkey"
-            columns: ["staff_id"]
-            isOneToOne: false
-            referencedRelation: "staff"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_booked_slots: {
+        Args: { p_staff_id: string }
+        Returns: {
+          ends_at: string
+          starts_at: string
+        }[]
+      }
     }
     Enums: {
       booking_status: "pending" | "confirmed" | "cancelled" | "completed"

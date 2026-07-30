@@ -4,13 +4,12 @@ import { supabase } from "@/lib/supabase/client";
 
 export type BookedRange = { startsAt: string; endsAt: string };
 
-/** Already-taken time ranges for a staff member, read from a narrow public
- * view that excludes customer name/email/phone. */
+/** Already-taken time ranges for a staff member, read via a SECURITY DEFINER
+ * RPC that excludes customer name/email/phone. */
 export async function getBookedRanges(staffId: string): Promise<BookedRange[]> {
-  const { data, error } = await supabase
-    .from("booked_slots")
-    .select("starts_at, ends_at")
-    .eq("staff_id", staffId);
+  const { data, error } = await supabase.rpc("get_booked_slots", {
+    p_staff_id: staffId,
+  });
 
   if (error) throw error;
 
