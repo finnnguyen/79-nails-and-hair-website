@@ -44,7 +44,24 @@ Row Level Security is on for every table:
 - `reviews`: public read where `approved = true`, public insert (starts unapproved)
 - Signed-in staff (`authenticated` role): full read on bookings/booking_services/reviews, plus update on bookings (status) and update/delete on reviews (moderation)
 
-Schema changes should go through Supabase migrations (via the Supabase MCP tools or dashboard SQL editor), not ad-hoc edits — keeps `lib/supabase/database.types.ts` regeneratable and in sync.
+**Migrations are version-controlled** in `supabase/migrations/` — that's the source of truth for the schema, not the live database. To make a schema change:
+
+```bash
+supabase login                                      # one-time, opens a browser
+supabase link --project-ref chzoisvirymqgtsbnheu    # one-time per machine
+
+supabase migration new some_change_name              # creates a blank migrations/<ts>_some_change_name.sql
+# edit the generated file, then:
+supabase db push                                     # applies it to the remote project
+```
+
+After any schema change, regenerate types so `lib/supabase/database.types.ts` stays in sync:
+
+```bash
+supabase gen types typescript --linked > lib/supabase/database.types.ts
+```
+
+Don't apply schema changes ad-hoc (dashboard SQL editor, one-off MCP calls) — anything not captured as a migration file here is invisible to anyone rebuilding this project from the repo.
 
 ## Staff Admin Area
 
