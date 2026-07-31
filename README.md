@@ -74,6 +74,12 @@ Don't apply schema changes ad-hoc (dashboard SQL editor, one-off MCP calls) — 
 
 **Creating a staff login:** there's no self-serve sign-up. In the [Supabase dashboard → Authentication → Users](https://supabase.com/dashboard/project/chzoisvirymqgtsbnheu/auth/users), click **Add user → Create new user**, set an email/password, and toggle **Auto Confirm User** on.
 
+## Error Tracking (Sentry)
+
+Installed via the Vercel Marketplace, connected to the `79nailsandhair` project (Preview + Production only, not local dev). `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_AUTH_TOKEN` are provisioned automatically as Vercel env vars — nothing to configure locally, and no DSN means the SDK just no-ops in local dev.
+
+`app/error.tsx` and `app/global-error.tsx` report client/render errors via `Sentry.captureException`; `instrumentation.ts` reports server errors via `onRequestError`. Dashboard: [79-nails-and-hair.sentry.io](https://79-nails-and-hair.sentry.io) (sign in with the same GitHub account as this repo — see Vercel's integration page if login ever needs re-linking).
+
 ## Project Structure
 
 - `app/` — routes (App Router). `app/admin/(protected)/` is gated by `proxy.ts` + a per-layout auth check.
