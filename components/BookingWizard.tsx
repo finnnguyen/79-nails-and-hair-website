@@ -7,11 +7,7 @@ import {
   type ServiceCategory,
 } from "@/lib/services-data";
 import { type Staff } from "@/lib/staff-data";
-import {
-  getAvailability,
-  parseTimeToMinutes,
-  toPacificDateAndMinutes,
-} from "@/lib/booking-availability";
+import { getAvailability, filterAvailability } from "@/lib/booking-availability";
 import CalendarPicker from "@/components/CalendarPicker";
 import { submitBooking } from "@/lib/actions/booking";
 import {
@@ -111,32 +107,10 @@ export default function BookingWizard({
     [totalDuration]
   );
 
-  const availability = useMemo(() => {
-    const rangesByDate = new Map<string, { start: number; end: number }[]>();
-    for (const range of bookedRanges) {
-      const start = toPacificDateAndMinutes(range.startsAt);
-      const end = toPacificDateAndMinutes(range.endsAt);
-      // Existing bookings never span midnight in this salon's hours, so
-      // start/end fall on the same Pacific-local date.
-      const list = rangesByDate.get(start.date) ?? [];
-      list.push({ start: start.minutes, end: end.minutes });
-      rangesByDate.set(start.date, list);
-    }
-
-    return baseAvailability
-      .map((day) => {
-        const busy = rangesByDate.get(day.date) ?? [];
-        const times = day.times.filter((t) => {
-          const candidateStart = parseTimeToMinutes(t);
-          const candidateEnd = candidateStart + totalDuration;
-          return !busy.some(
-            (b) => candidateStart < b.end && candidateEnd > b.start
-          );
-        });
-        return { ...day, times };
-      })
-      .filter((day) => day.times.length > 0);
-  }, [baseAvailability, bookedRanges, totalDuration]);
+  const availability = useMemo(
+    () => filterAvailability(baseAvailability, bookedRanges, totalDuration),
+    [baseAvailability, bookedRanges, totalDuration]
+  );
   const hasStartingAt = selectedServices.some((s) => s.startingAt);
 
   const categoryServices = services.filter((s) => s.category === activeCategory);

@@ -6,6 +6,10 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { ServiceCategory } from "@/lib/services-data";
 import { toPacificDateAndMinutes } from "@/lib/booking-availability";
+import {
+  computeTurnCreditAfterVisit,
+  shouldSendRequestToBackOfLine,
+} from "@/lib/rotation-math";
 
 /** Throws a single clean Error (matching this file's existing throw-on-invalid
  * convention) instead of a raw ZodError. */
@@ -16,9 +20,6 @@ function parseOrThrow<T>(schema: z.ZodType<T>, input: unknown): T {
   }
   return result.data;
 }
-
-const MINUTES_PER_TURN = 35;
-const REQUEST_RESET_THRESHOLD = 30; // $ — by-request visits at/above this reset the stylist to 0
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -567,7 +568,7 @@ async function applyTurnCredit(
     // Under-threshold requests don't touch rotation at all; at/above it,
     // treat as a completed full turn (reset + back of line), same as
     // normal rotation work.
-    if (visit.totalPrice < REQUEST_RESET_THRESHOLD) return;
+    if (!shouldSendRequestToBackOfLine(visit.totalPrice)) return;
     await sendToBackOfLine(staffId);
     return;
   }
@@ -579,9 +580,12 @@ async function applyTurnCredit(
     .single();
   if (fetchError) throw fetchError;
 
-  const newCredit = Number(current.turn_credit) + visit.durationMinutes / MINUTES_PER_TURN;
+  const { sendToBack, newCredit } = computeTurnCreditAfterVisit(
+    Number(current.turn_credit),
+    visit.durationMinutes
+  );
 
-  if (newCredit >= 1) {
+  if (sendToBack) {
     await sendToBackOfLine(staffId);
     return;
   }
