@@ -1,6 +1,38 @@
 # 79 Nails & Hair
 
-Website and online booking for 79 Nails & Hair Salon — service/staff browsing, appointment booking, and customer reviews, backed by Supabase. Built on Next.js 16 (App Router). Note: this Next.js version renames `middleware.ts` to `proxy.ts` and a few other conventions — check `node_modules/next/dist/docs/` before assuming APIs from older versions.
+[![CI](https://github.com/finnnguyen/79-nails-and-hair-website/workflows/CI/badge.svg)](https://github.com/finnnguyen/79-nails-and-hair-website/actions/workflows/ci.yml)
+
+**Live:** [79nailsandhair.vercel.app](https://79nailsandhair.vercel.app)
+
+A production booking platform for a real nail & hair salon — service/staff browsing, a booking wizard with real-time availability, customer reviews, and a staff-facing admin console for managing bookings, moderating reviews, and running the daily walk-in queue and stylist rotation.
+
+Built on Next.js 16 (App Router, Server Actions) and Supabase (Postgres, Row Level Security, Auth), deployed on Vercel.
+
+## Engineering Highlights
+
+The parts of this project built the way a real production system needs to work, not just the way that ships fastest:
+
+- **Correctness enforced in the database, not the app.** No-double-booking is a Postgres `EXCLUDE` constraint on a time-range column (`bookings_no_overlap`), not an application-level check — a race condition cannot double-book a stylist, regardless of what the request-handling code does.
+- **Row Level Security as the actual authorization model.** Every table's access rules live in Postgres policies (public read/insert where appropriate, `authenticated`-only elsewhere) — not scattered `if` checks in route handlers that are easy to miss on the next endpoint.
+- **Schema as code.** All 18 migrations are tracked in `supabase/migrations/` and applied through the Supabase CLI. The schema is reproducible from the repo alone, not reconstructed from memory of what changed when.
+- **Input validated at the actual trust boundary.** Server Actions are public HTTP endpoints regardless of what the client UI allows — every one validates its input with Zod before it reaches the database.
+- **CI on every push** — lint, typecheck, unit tests, and a full production build gate `main` (badge above is live, not decorative).
+- **Rate limiting on public write endpoints** (bookings, reviews), backed by a `SECURITY DEFINER` Postgres function rather than pulling in an external service the project doesn't need at this scale.
+- **Real error tracking in production**, not `console.log` — Sentry wired through `error.tsx` / `global-error.tsx` / `instrumentation.ts`, verified end-to-end against a live deployment (forced a real error, confirmed it landed in Sentry) before calling it done.
+- **Tests that were mutation-checked, not just written.** The turn-rotation credit math and the booking-overlap filter each had their core logic broken on purpose to confirm the suite actually fails when it should, then reverted.
+
+## Tech Stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 16 — App Router, Server Actions, Turbopack |
+| Database | Supabase — Postgres, Row Level Security, Auth |
+| Validation | Zod |
+| Styling | Tailwind CSS |
+| Testing | Vitest |
+| Error tracking | Sentry (native Vercel Marketplace integration) |
+| Email | Resend |
+| CI/CD | GitHub Actions + Vercel |
 
 ## Getting Started
 
@@ -23,6 +55,17 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable key>
 Get the publishable key from the [Supabase dashboard → Project Settings → API](https://supabase.com/dashboard/project/chzoisvirymqgtsbnheu/settings/api).
 
 **For CI**: the same two `NEXT_PUBLIC_SUPABASE_*` values must also be added as repo secrets (Settings → Secrets and variables → Actions) — several pages are statically prerendered and fetch from Supabase at build time, so `npm run build` fails in CI without real values.
+
+## Testing
+
+```bash
+npm run test
+```
+
+Pure-logic unit tests (Vitest — no jsdom or React Testing Library, since nothing here renders a component) covering the two places business logic was genuinely easy to get subtly wrong:
+
+- `lib/booking-availability.test.ts` — slot generation (closed Mondays, Sunday vs. weekday close times, duration-aware last-start-time) and the overlap filter that removes already-booked slots from what's shown as available.
+- `lib/rotation-math.test.ts` — turn-credit accumulation and the reset threshold for by-request visits.
 
 ## Database (Supabase)
 
@@ -87,6 +130,9 @@ Installed via the Vercel Marketplace, connected to the `79nailsandhair` project 
 - `lib/*-data.ts` — server-side data fetchers (`getServices`, `getStaff`, `getApprovedReviews`), query Supabase directly.
 - `lib/actions/` — Server Actions for mutations (booking submission, review submission, admin status/approval updates, auth).
 - `lib/supabase/` — Supabase clients (`client.ts` for anon reads/public inserts, `server.ts` for session-aware Server Components/Actions, `middleware.ts` for the proxy session refresh) and generated `database.types.ts`.
+- `lib/booking-availability.ts`, `lib/rotation-math.ts` — pure business logic, unit tested in isolation from the Supabase/React code around them.
+
+Note: this Next.js version renames `middleware.ts` to `proxy.ts` and has a few other conventions that differ from older docs/training data — check `node_modules/next/dist/docs/` before assuming an API.
 
 ## Learn More
 
