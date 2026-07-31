@@ -2,9 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { ServiceCategory } from "@/lib/services-data";
 import { toPacificDateAndMinutes } from "@/lib/booking-availability";
+
+/** Throws a single clean Error (matching this file's existing throw-on-invalid
+ * convention) instead of a raw ZodError. */
+function parseOrThrow<T>(schema: z.ZodType<T>, input: unknown): T {
+  const result = schema.safeParse(input);
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Invalid input");
+  }
+  return result.data;
+}
 
 const MINUTES_PER_TURN = 35;
 const REQUEST_RESET_THRESHOLD = 30; // $ — by-request visits at/above this reset the stylist to 0
@@ -302,23 +313,39 @@ export async function getDailyTurns(): Promise<CompletedTurn[]> {
     }));
 }
 
-export type CheckInInput = {
-  customerName: string;
-  isRequest: boolean;
-  requestedStaffId: string | null;
-  services: { id: string; name: string; price: number; durationMinutes: number }[];
-};
+const checkInInputSchema = z
+  .object({
+    customerName: z.string().trim().max(200),
+    isRequest: z.boolean(),
+    requestedStaffId: z.string().trim().min(1).nullable(),
+    services: z
+      .array(
+        z.object({
+          id: z.string().trim().min(1),
+          name: z.string().trim().min(1),
+          price: z.number().nonnegative(),
+          durationMinutes: z.number().int().positive(),
+        })
+      )
+      .min(1, "Choose at least one service"),
+  })
+  .refine((data) => !data.isRequest || data.requestedStaffId, {
+    message: "Choose the requested stylist",
+    path: ["requestedStaffId"],
+  })
+  .refine((data) => new Set(data.services.map((s) => s.id)).size === data.services.length, {
+    message: "Duplicate services are not allowed",
+    path: ["services"],
+  });
 
-export async function checkInWalkIn(input: CheckInInput): Promise<string> {
+export type CheckInInput = z.infer<typeof checkInInputSchema>;
+
+export async function checkInWalkIn(rawInput: CheckInInput): Promise<string> {
   const supabase = await createClient();
   await requireStaff(supabase);
-  if (input.services.length === 0) throw new Error("Choose at least one service");
-  if (input.isRequest && !input.requestedStaffId) {
-    throw new Error("Choose the requested stylist");
-  }
+  const input = parseOrThrow(checkInInputSchema, rawInput);
 
   const serviceIds = [...new Set(input.services.map((service) => service.id))];
-  if (serviceIds.length !== input.services.length) throw new Error("Duplicate services are not allowed");
 
   const { data: catalogServices, error: catalogError } = await supabase
     .from("services")
@@ -462,24 +489,28 @@ export async function deleteTurn(walkInId: string) {
   revalidatePath("/admin/turns");
 }
 
-export type ManualTurnInput = {
-  staffId: string;
-  customerName: string;
-  serviceName: string;
-  price: number;
-  completedAt: string; // ISO — lets it slot into the right spot in the log
-};
+const manualTurnInputSchema = z.object({
+  staffId: z.string().trim().min(1),
+  customerName: z.string().trim().max(200),
+  serviceName: z.string().trim().max(200),
+  price: z.number().nonnegative(),
+  // ISO — lets it slot into the right spot in the log.
+  completedAt: z.string().refine((v) => !Number.isNaN(new Date(v).getTime()), {
+    message: "Completion time is invalid",
+  }),
+});
+
+export type ManualTurnInput = z.infer<typeof manualTurnInputSchema>;
 
 /** Directly logs a completed turn that was missed at check-in time — e.g. a
  * walk-in that got done without ever being entered into the queue. Like
  * delete/price-edit, this only writes the log/earnings record; it doesn't
  * touch turn credit or queue position. */
-export async function addManualTurn(input: ManualTurnInput) {
+export async function addManualTurn(rawInput: ManualTurnInput) {
   const supabase = await createClient();
   await requireStaff(supabase);
-  requireNonNegativeMoney(input.price);
+  const input = parseOrThrow(manualTurnInputSchema, rawInput);
   const completedAt = new Date(input.completedAt);
-  if (Number.isNaN(completedAt.getTime())) throw new Error("Completion time is invalid");
   const walkInId = randomUUID();
 
   const { error } = await supabase.from("walk_ins").insert({

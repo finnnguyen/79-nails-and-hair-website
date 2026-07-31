@@ -1,20 +1,29 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { z } from "zod";
 import { supabase } from "@/lib/supabase/client";
 
-export type ReviewInput = {
-  name: string;
-  rating: number;
-  comment: string;
-  websiteRating: number | null;
-  websiteComment: string;
-  staffId: string | null;
-};
+const reviewInputSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(200),
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().trim().max(2000),
+  websiteRating: z.number().int().min(1).max(5).nullable(),
+  websiteComment: z.string().trim().max(2000),
+  staffId: z.string().trim().min(1).nullable(),
+});
+
+export type ReviewInput = z.infer<typeof reviewInputSchema>;
 
 export type ReviewResult = { success: true } | { success: false; error: string };
 
-export async function submitReview(input: ReviewInput): Promise<ReviewResult> {
+export async function submitReview(rawInput: ReviewInput): Promise<ReviewResult> {
+  const parsed = reviewInputSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid review" };
+  }
+  const input = parsed.data;
+
   // Same RLS constraint as bookings: new reviews start unapproved, and the
   // public SELECT policy only exposes approved=true rows, so INSERT ...
   // RETURNING (via .select()) would be rejected. No need for the id back anyway.

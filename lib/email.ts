@@ -17,8 +17,22 @@ export type BookingEmailInput = {
   total: number;
 };
 
+// Every value below (customer name, staff name, service names) is
+// client-supplied and lands unescaped in the HTML otherwise — this is the
+// one place that closes that hole for both the business and customer emails.
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function serviceListHtml(services: { name: string; price: number }[]) {
-  return `<ul>${services.map((s) => `<li>${s.name} — $${s.price}</li>`).join("")}</ul>`;
+  return `<ul>${services
+    .map((s) => `<li>${escapeHtml(s.name)} — $${s.price}</li>`)
+    .join("")}</ul>`;
 }
 
 /** Best-effort — a failed send should never fail the booking itself. */
@@ -30,8 +44,8 @@ export async function sendBookingEmails(input: BookingEmailInput) {
       subject: `New booking: ${input.customerName} — ${input.date} ${input.time}`,
       html: `
         <h2>New booking request</h2>
-        <p><strong>${input.customerName}</strong> requested an appointment with
-        <strong>${input.staffName}</strong> on <strong>${input.date} at ${input.time}</strong>.</p>
+        <p><strong>${escapeHtml(input.customerName)}</strong> requested an appointment with
+        <strong>${escapeHtml(input.staffName)}</strong> on <strong>${input.date} at ${input.time}</strong>.</p>
         ${serviceListHtml(input.services)}
         <p>Total: $${input.total}</p>
         <p>Manage this booking in the admin dashboard.</p>
@@ -46,8 +60,8 @@ export async function sendBookingEmails(input: BookingEmailInput) {
         to: input.customerEmail,
         subject: "We received your booking request — 79 Nails & Hair",
         html: `
-          <h2>Thanks, ${input.customerName}!</h2>
-          <p>We received your request for an appointment with <strong>${input.staffName}</strong>
+          <h2>Thanks, ${escapeHtml(input.customerName)}!</h2>
+          <p>We received your request for an appointment with <strong>${escapeHtml(input.staffName)}</strong>
           on <strong>${input.date} at ${input.time}</strong>. We'll reach out to confirm.</p>
           ${serviceListHtml(input.services)}
           <p>Total: $${input.total}</p>

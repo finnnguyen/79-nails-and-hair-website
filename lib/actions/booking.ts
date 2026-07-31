@@ -1,26 +1,51 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { z } from "zod";
 import { supabase } from "@/lib/supabase/client";
 import { sendBookingEmails } from "@/lib/email";
 import { getTotalDuration } from "@/lib/actions/availability";
 
-export type BookingInput = {
-  name: string;
-  email: string;
-  phone: string;
-  staffId: string;
-  staffName: string;
-  date: string;
-  time: string;
-  services: { id: string; name: string; price: number }[];
-};
+const bookingInputSchema = z
+  .object({
+    name: z.string().trim().min(1, "Name is required").max(200),
+    email: z.union([z.string().trim().max(320).email("Invalid email"), z.literal("")]),
+    phone: z.string().trim().max(30),
+    staffId: z.string().trim().min(1, "Choose a staff member"),
+    staffName: z.string().trim().min(1),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"),
+    // Matches the format the bookings_set_time_range DB trigger expects
+    // (to_timestamp(..., 'HH12:MI AM')) — catch a malformed value here with
+    // a clean message instead of a raw Postgres trigger error.
+    time: z.string().regex(/^\d{1,2}:\d{2} (AM|PM)$/, "Invalid time"),
+    services: z
+      .array(
+        z.object({
+          id: z.string().trim().min(1),
+          name: z.string().trim().min(1),
+          price: z.number().nonnegative(),
+        })
+      )
+      .min(1, "Choose at least one service"),
+  })
+  .refine((data) => data.email !== "" || data.phone !== "", {
+    message: "Provide an email or phone number",
+    path: ["email"],
+  });
+
+export type BookingInput = z.infer<typeof bookingInputSchema>;
 
 export type BookingResult =
   | { success: true; bookingId: string }
   | { success: false; error: string; slotTaken?: boolean };
 
-export async function submitBooking(input: BookingInput): Promise<BookingResult> {
+export async function submitBooking(rawInput: BookingInput): Promise<BookingResult> {
+  const parsed = bookingInputSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid booking details" };
+  }
+  const input = parsed.data;
+
   const total = input.services.reduce((sum, s) => sum + s.price, 0);
   // Never trust a client-supplied duration — it directly gates the
   // no-overlap database constraint, so it must be computed authoritatively.
