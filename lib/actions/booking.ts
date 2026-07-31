@@ -5,6 +5,7 @@ import { z } from "zod";
 import { supabase } from "@/lib/supabase/client";
 import { sendBookingEmails } from "@/lib/email";
 import { getTotalDuration } from "@/lib/actions/availability";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const bookingInputSchema = z
   .object({
@@ -45,6 +46,14 @@ export async function submitBooking(rawInput: BookingInput): Promise<BookingResu
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid booking details" };
   }
   const input = parsed.data;
+
+  const allowed = await checkRateLimit("booking", { maxCount: 5, windowMinutes: 15 });
+  if (!allowed) {
+    return {
+      success: false,
+      error: "Too many booking attempts — please wait a few minutes and try again.",
+    };
+  }
 
   const total = input.services.reduce((sum, s) => sum + s.price, 0);
   // Never trust a client-supplied duration — it directly gates the

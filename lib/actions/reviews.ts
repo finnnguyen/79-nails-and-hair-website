@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { supabase } from "@/lib/supabase/client";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const reviewInputSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
@@ -23,6 +24,11 @@ export async function submitReview(rawInput: ReviewInput): Promise<ReviewResult>
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid review" };
   }
   const input = parsed.data;
+
+  const allowed = await checkRateLimit("review", { maxCount: 3, windowMinutes: 60 });
+  if (!allowed) {
+    return { success: false, error: "Too many reviews submitted — please try again later." };
+  }
 
   // Same RLS constraint as bookings: new reviews start unapproved, and the
   // public SELECT policy only exposes approved=true rows, so INSERT ...

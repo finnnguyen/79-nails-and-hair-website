@@ -109,6 +109,24 @@ export type Database = {
           },
         ]
       }
+      rate_limit_hits: {
+        Row: {
+          created_at: string
+          id: number
+          key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          key: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          key?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           approved: boolean
@@ -426,6 +444,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: { p_key: string; p_max_count: number; p_window_minutes: number }
+        Returns: boolean
+      }
       get_booked_slots: {
         Args: { p_staff_id: string }
         Returns: {
