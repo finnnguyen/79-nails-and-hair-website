@@ -50,9 +50,12 @@ Create `.env.local` (already gitignored) with:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://chzoisvirymqgtsbnheu.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable key>
+ANTHROPIC_API_KEY=<anthropic api key>
 ```
 
 Get the publishable key from the [Supabase dashboard → Project Settings → API](https://supabase.com/dashboard/project/chzoisvirymqgtsbnheu/settings/api).
+
+`ANTHROPIC_API_KEY` powers the natural-language service search on `/services` (`lib/actions/service-search.ts`) — get one from the [Anthropic Console](https://console.anthropic.com/). Without it, the search box degrades to its "temporarily unavailable" state and the rest of the page works normally.
 
 **For CI**: the same two `NEXT_PUBLIC_SUPABASE_*` values must also be added as repo secrets (Settings → Secrets and variables → Actions) — several pages are statically prerendered and fetch from Supabase at build time, so `npm run build` fails in CI without real values.
 
