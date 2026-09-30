@@ -10,17 +10,21 @@ export default function ServiceRow({
 }) {
   const shownSubtitle = subtitle ?? service.note;
   return (
-    <li className="flex items-center justify-between gap-4 py-3.5">
-      <div className="flex flex-col">
+    <li className="py-4">
+      <div className="flex items-baseline gap-3">
         <span className="text-foreground">{service.name}</span>
-        {shownSubtitle && (
-          <span className="text-xs text-muted">{shownSubtitle}</span>
-        )}
+        <span
+          aria-hidden
+          className="flex-1 translate-y-[-3px] border-b border-dotted border-muted/40"
+        />
+        <span className="whitespace-nowrap tabular-nums text-foreground">
+          ${service.price}
+          {service.startingAt && "+"}
+        </span>
       </div>
-      <span className="whitespace-nowrap font-display text-lg text-brand">
-        ${service.price}
-        {service.startingAt && "+"}
-      </span>
+      {shownSubtitle && (
+        <p className="mt-1 text-sm text-muted">{shownSubtitle}</p>
+      )}
     </li>
   );
 }

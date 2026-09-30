@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  CATEGORY_LABELS,
   SERVICE_CATEGORIES,
   type Service,
   type ServiceCategory,
@@ -125,15 +126,15 @@ export default function BookingWizard({
           type="button"
           onClick={() => toggleService(s.id)}
           aria-pressed={checked}
-          className={`flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors ${
+          className={`flex w-full items-center gap-3 rounded-sm border bg-surface px-4 py-3.5 text-left transition-colors ${
             checked
-              ? "border-brand bg-brand-tint"
-              : "border-border bg-surface hover:border-brand/40"
+              ? "border-foreground"
+              : "border-border hover:border-muted/60"
           }`}
         >
           <span
-            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
-              checked ? "border-brand bg-brand text-white" : "border-border"
+            className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[3px] border ${
+              checked ? "border-foreground bg-foreground text-background" : "border-muted/50"
             }`}
           >
             {checked && (
@@ -149,8 +150,8 @@ export default function BookingWizard({
               </svg>
             )}
           </span>
-          <span className="flex-1 text-foreground">{s.name}</span>
-          <span className="whitespace-nowrap font-display text-brand">
+          <span className="flex-1 text-sm text-foreground">{s.name}</span>
+          <span className="whitespace-nowrap text-sm tabular-nums text-muted">
             ${s.price}
             {s.startingAt && "+"}
           </span>
@@ -178,14 +179,32 @@ export default function BookingWizard({
       name.trim() !== "" &&
       (phone.trim() !== "" || email.trim() !== ""));
 
+  // Long steps (the service list) leave the Continue button far down the
+  // page — bring the next step's heading back into view.
+  const topRef = useRef<HTMLDivElement>(null);
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const top = topRef.current;
+    if (top && top.getBoundingClientRect().top < 0) {
+      top.scrollIntoView({ block: "start" });
+    }
+  }, [step]);
+
   const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   if (submitted) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-10 text-center">
-        <h2 className="font-display text-2xl text-foreground">
-          Request received!
+      <div className="mx-auto max-w-lg border border-border bg-surface p-8 md:p-10">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
+          Request sent
+        </p>
+        <h2 className="mt-3 font-display text-3xl tracking-tight text-foreground">
+          Thanks, {name.trim().split(" ")[0]}.
         </h2>
         <p className="mt-3 text-muted">
           We&apos;ll reach you {phone && `at ${phone}`}
@@ -193,11 +212,11 @@ export default function BookingWizard({
           {email && `at ${email}`} to confirm your appointment with{" "}
           {selectedStaff?.name} on {selectedDay?.label} at {time}:
         </p>
-        <ul className="mx-auto mt-4 max-w-xs text-left text-sm text-foreground">
+        <ul className="mt-6 divide-y divide-border border-t border-border text-sm text-foreground">
           {selectedServices.map((s) => (
-            <li key={s.id} className="flex justify-between py-1">
+            <li key={s.id} className="flex justify-between py-2.5">
               <span>{s.name}</span>
-              <span className="text-brand">
+              <span className="tabular-nums text-muted">
                 ${s.price}
                 {s.startingAt && "+"}
               </span>
@@ -209,74 +228,76 @@ export default function BookingWizard({
   }
 
   return (
-    <div>
-      <h1 className="font-display text-4xl text-foreground md:text-5xl">
-        Book an Appointment
-      </h1>
-      <p className="mt-3 text-muted">
-        Pick a service, choose your stylist, and grab a time.
+    <div ref={topRef} className="scroll-mt-24">
+      <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
+        Book online
       </p>
+      <h1 className="mt-3 font-display text-4xl tracking-tight text-foreground md:text-5xl">
+        Book an appointment
+      </h1>
 
-      <ol className="mb-10 mt-10 flex flex-wrap gap-2 text-sm">
+      <ol className="mb-10 mt-10 grid grid-cols-4 gap-2 text-xs sm:text-sm">
         {STEPS.map((label, i) => (
           <li
             key={label}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${
-              i === step
-                ? "bg-brand text-white"
-                : i < step
-                  ? "bg-brand-tint text-brand-dark"
-                  : "border border-border text-muted"
-            }`}
+            aria-current={i === step ? "step" : undefined}
+            className={`border-t-2 pt-3 ${
+              i <= step ? "border-foreground" : "border-border"
+            } ${i === step ? "text-foreground" : "text-muted"}`}
           >
-            <span className="font-medium">{i + 1}</span>
-            {label}
+            <span className="tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+            <span className="ml-2 hidden sm:inline">{label}</span>
           </li>
         ))}
       </ol>
+      <h2 className="mb-6 font-display text-2xl text-foreground sm:hidden">
+        {STEPS[step]}
+      </h2>
 
       {step === 0 && (
         <div>
-          <div className="flex flex-wrap gap-2">
+          <div role="tablist" className="flex gap-8 overflow-x-auto border-b border-border">
             {SERVICE_CATEGORIES.map((category) => (
               <button
                 key={category}
                 type="button"
+                role="tab"
+                aria-selected={activeCategory === category}
                 onClick={() => setActiveCategory(category)}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                className={`-mb-px whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors ${
                   activeCategory === category
-                    ? "bg-brand text-white"
-                    : "border border-border bg-surface text-foreground hover:border-brand/40 hover:text-brand"
+                    ? "border-foreground text-foreground"
+                    : "border-transparent text-muted hover:text-foreground"
                 }`}
               >
-                {category}
+                {CATEGORY_LABELS[category]}
               </button>
             ))}
           </div>
 
-          <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+          <ul className="mt-6 grid gap-2 sm:grid-cols-2">
             {coreServices.map(renderServiceOption)}
           </ul>
 
           {addonServices.length > 0 && (
             <>
-              <p className="mb-3 mt-8 text-xs font-medium uppercase tracking-wide text-muted">
+              <p className="mb-3 mt-8 text-xs font-medium uppercase tracking-[0.16em] text-muted">
                 Add-ons
               </p>
-              <ul className="grid gap-3 sm:grid-cols-2">
+              <ul className="grid gap-2 sm:grid-cols-2">
                 {addonServices.map(renderServiceOption)}
               </ul>
             </>
           )}
 
           {selectedServices.length > 0 && (
-            <div className="mt-8 rounded-xl border border-border bg-surface p-4">
+            <div className="mt-8 border border-border bg-surface p-5">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-medium text-foreground">
                   {selectedServices.length} service
                   {selectedServices.length > 1 && "s"} selected
                 </p>
-                <p className="font-display text-lg text-brand">
+                <p className="text-sm tabular-nums text-foreground">
                   {hasStartingAt && "from "}${total}
                 </p>
               </div>
@@ -286,7 +307,7 @@ export default function BookingWizard({
                     <button
                       type="button"
                       onClick={() => toggleService(s.id)}
-                      className="flex items-center gap-1.5 rounded-full bg-brand-tint px-3 py-1 text-xs text-brand-dark hover:bg-gold-tint"
+                      className="flex items-center gap-1.5 rounded-sm border border-border px-2.5 py-1 text-xs text-foreground hover:border-foreground"
                     >
                       {s.name}
                       <span aria-hidden>&times;</span>
@@ -305,7 +326,7 @@ export default function BookingWizard({
             Staff available for {selectedServices.map((s) => s.name).join(", ")}
           </p>
           {eligibleStaff.length === 0 ? (
-            <p className="rounded-xl border border-border bg-surface p-4 text-sm text-muted">
+            <p className="border border-border bg-surface p-5 text-sm text-muted">
               No single staff member covers all selected services — try
               splitting this into separate visits, or remove a service.
             </p>
@@ -320,13 +341,14 @@ export default function BookingWizard({
                       setDate(null);
                       setTime(null);
                     }}
-                    className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-colors ${
+                    aria-pressed={staffId === member.id}
+                    className={`flex w-full items-center gap-4 rounded-sm border bg-surface p-4 text-left transition-colors ${
                       staffId === member.id
-                        ? "border-brand bg-brand-tint"
-                        : "border-border bg-surface hover:border-brand/40"
+                        ? "border-foreground"
+                        : "border-border hover:border-muted/60"
                     }`}
                   >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-tint font-display text-lg text-brand">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center border border-border bg-background font-display text-xl text-foreground">
                       {member.name.charAt(0)}
                     </span>
                     <span>
@@ -363,16 +385,17 @@ export default function BookingWizard({
                   Available times &middot;{" "}
                   <span className="text-foreground">{selectedDay.label}</span>
                 </p>
-                <div className="flex max-h-80 flex-col gap-1.5 overflow-y-auto pr-1">
+                <div className="grid max-h-80 grid-cols-3 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-4">
                   {selectedDay.times.map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => setTime(t)}
-                      className={`rounded-lg px-4 py-2.5 text-left text-sm transition-colors ${
+                      aria-pressed={time === t}
+                      className={`rounded-sm border px-2 py-2.5 text-center text-sm tabular-nums transition-colors ${
                         time === t
-                          ? "bg-brand text-white"
-                          : "border border-border bg-surface text-foreground hover:border-brand/40"
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border bg-surface text-foreground hover:border-muted/60"
                       }`}
                     >
                       {t}
@@ -381,7 +404,7 @@ export default function BookingWizard({
                 </div>
               </>
             ) : (
-              <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted">
+              <p className="border border-dashed border-border p-6 text-center text-sm text-muted">
                 Pick a date to see available times
               </p>
             )}
@@ -391,12 +414,15 @@ export default function BookingWizard({
 
       {step === 3 && (
         <div>
-          <div className="mb-8 rounded-xl border border-border bg-brand-tint/40 p-4 text-sm">
-            <ul>
+          <div className="mb-8 border border-border bg-surface p-5 text-sm">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
+              Summary
+            </p>
+            <ul className="mt-3 space-y-1">
               {selectedServices.map((s) => (
                 <li key={s.id} className="flex justify-between text-foreground">
                   <span>{s.name}</span>
-                  <span className="text-brand">
+                  <span className="tabular-nums text-muted">
                     ${s.price}
                     {s.startingAt && "+"}
                   </span>
@@ -407,7 +433,7 @@ export default function BookingWizard({
               with {selectedStaff?.name} &middot; {selectedDay?.label} at{" "}
               {time}
             </p>
-            <p className="mt-2 flex justify-between border-t border-border/70 pt-2 font-medium text-foreground">
+            <p className="mt-3 flex justify-between border-t border-border pt-3 font-medium text-foreground">
               <span>Total</span>
               <span>
                 {hasStartingAt && "from "}${total}
@@ -422,8 +448,8 @@ export default function BookingWizard({
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="rounded-lg border border-border bg-surface px-3 py-2.5 text-foreground outline-none focus:border-brand"
-                placeholder="Jane Doe"
+                className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
+                placeholder="Your name"
               />
             </label>
             <label className="flex flex-col gap-1.5 text-sm">
@@ -432,7 +458,7 @@ export default function BookingWizard({
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="rounded-lg border border-border bg-surface px-3 py-2.5 text-foreground outline-none focus:border-brand"
+                className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
                 placeholder="(714) 555-0179"
               />
             </label>
@@ -442,8 +468,8 @@ export default function BookingWizard({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="rounded-lg border border-border bg-surface px-3 py-2.5 text-foreground outline-none focus:border-brand"
-                placeholder="jane@email.com"
+                className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
+                placeholder="you@example.com"
               />
             </label>
             <p className="text-xs text-muted sm:col-span-2">
@@ -453,21 +479,21 @@ export default function BookingWizard({
         </div>
       )}
 
-      <div className="mt-10 flex justify-between">
+      <div className="mt-10 flex items-center justify-between border-t border-border pt-6">
         <button
           type="button"
           onClick={goBack}
           disabled={step === 0}
-          className="rounded-full px-6 py-2.5 text-sm font-medium text-foreground disabled:opacity-0"
+          className="py-3 text-sm font-medium text-muted transition-colors hover:text-foreground disabled:invisible"
         >
-          Back
+          &larr; Back
         </button>
         {step < STEPS.length - 1 ? (
           <button
             type="button"
             onClick={goNext}
             disabled={!canContinue}
-            className="rounded-full bg-brand px-7 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-sm bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:opacity-30"
           >
             Continue
           </button>
@@ -511,9 +537,9 @@ export default function BookingWizard({
               }
             }}
             disabled={!canContinue || submitting}
-            className="rounded-full bg-brand px-7 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-sm bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:opacity-30"
           >
-            {submitting ? "Booking…" : "Confirm Booking"}
+            {submitting ? "Booking…" : "Request appointment"}
           </button>
         )}
       </div>

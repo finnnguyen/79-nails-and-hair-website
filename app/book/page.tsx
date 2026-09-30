@@ -8,6 +8,8 @@ type SearchParams = Promise<{
   category?: string;
 }>;
 
+export const metadata = { title: "Book an Appointment" };
+
 export default async function BookPage({
   searchParams,
 }: {

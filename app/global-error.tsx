@@ -30,7 +30,7 @@ export default function GlobalError({
         )}
         <button
           onClick={() => unstable_retry()}
-          className="mt-4 rounded-full bg-brand px-7 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
+          className="mt-4 rounded-sm bg-foreground px-7 py-3 text-sm font-medium text-background transition-colors hover:bg-brand"
         >
           Try again
         </button>

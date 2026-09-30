@@ -66,9 +66,9 @@ export default function CalendarPicker({
   };
 
   return (
-    <div className="w-full max-w-xs rounded-2xl border border-border bg-surface p-4">
+    <div className="w-full max-w-xs border border-border bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="font-display text-base text-foreground">
+        <p className="font-display text-lg text-foreground">
           {MONTH_LABEL.format(viewDate)}
         </p>
         <div className="flex gap-1">
@@ -77,7 +77,7 @@ export default function CalendarPicker({
             onClick={() => changeMonth(-1)}
             disabled={monthKey(viewDate) <= minMonth}
             aria-label="Previous month"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-foreground hover:bg-brand-tint disabled:opacity-30 disabled:hover:bg-transparent"
+            className="flex h-8 w-8 items-center justify-center rounded-sm text-foreground hover:bg-background disabled:opacity-30 disabled:hover:bg-transparent"
           >
             &#8249;
           </button>
@@ -86,7 +86,7 @@ export default function CalendarPicker({
             onClick={() => changeMonth(1)}
             disabled={monthKey(viewDate) >= maxMonth}
             aria-label="Next month"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-foreground hover:bg-brand-tint disabled:opacity-30 disabled:hover:bg-transparent"
+            className="flex h-8 w-8 items-center justify-center rounded-sm text-foreground hover:bg-background disabled:opacity-30 disabled:hover:bg-transparent"
           >
             &#8250;
           </button>
@@ -95,7 +95,7 @@ export default function CalendarPicker({
 
       <div className="grid grid-cols-7 gap-y-1 text-center">
         {WEEKDAY_LABELS.map((label) => (
-          <span key={label} className="text-xs text-muted">
+          <span key={label} className="pb-1 text-[11px] uppercase tracking-wider text-muted">
             {label}
           </span>
         ))}
@@ -115,13 +115,14 @@ export default function CalendarPicker({
                 type="button"
                 disabled={!isAvailable}
                 onClick={() => onSelect(key)}
-                className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm transition-colors ${
+                aria-pressed={isSelected}
+                className={`mx-auto flex h-9 w-9 items-center justify-center rounded-sm text-sm tabular-nums transition-colors ${
                   isSelected
-                    ? "bg-brand text-white"
+                    ? "bg-foreground text-background"
                     : isAvailable
-                      ? "text-foreground hover:bg-brand-tint"
-                      : "text-muted/40"
-                } ${isToday && !isSelected ? "font-semibold text-brand ring-1 ring-brand/40" : ""}`}
+                      ? "text-foreground hover:bg-background"
+                      : "text-muted/35"
+                } ${isToday && !isSelected ? "font-semibold underline underline-offset-4" : ""}`}
               >
                 {day.getDate()}
               </button>

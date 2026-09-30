@@ -1,37 +1,41 @@
+import Stars from "@/components/Stars";
 import type { Review } from "@/lib/reviews-data";
 
-function Stars({ value }: { value: number }) {
-  return (
-    <span className="text-brand" aria-label={`${value} out of 5 stars`}>
-      {"★".repeat(value)}
-      <span className="text-border">{"★".repeat(5 - value)}</span>
-    </span>
-  );
-}
+const DATE_LABEL = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  year: "numeric",
+});
 
 export default function ReviewsList({ reviews }: { reviews: Review[] }) {
   if (reviews.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted">
+      <p className="border border-dashed border-border p-8 text-center text-sm text-muted">
         No reviews yet — be the first to share your experience.
       </p>
     );
   }
 
   return (
-    <ul className="flex flex-col gap-4">
+    <ul className="divide-y divide-border border-t border-border">
       {reviews.map((r) => (
-        <li key={r.id} className="rounded-xl border border-border bg-surface p-5">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-foreground">{r.customerName}</span>
+        <li key={r.id} className="py-7">
+          <div className="flex items-center justify-between gap-4">
             <Stars value={r.rating} />
+            <time dateTime={r.createdAt} className="text-xs text-muted">
+              {DATE_LABEL.format(new Date(r.createdAt))}
+            </time>
           </div>
-          {r.staffName && (
-            <p className="mt-0.5 text-xs text-muted">Service by {r.staffName}</p>
+          {r.comment && (
+            <p className="mt-4 font-display text-xl leading-snug text-foreground">
+              {r.comment}
+            </p>
           )}
-          {r.comment && <p className="mt-2 text-sm text-foreground">{r.comment}</p>}
+          <p className="mt-3 text-sm text-muted">
+            <span className="text-foreground">{r.customerName}</span>
+            {r.staffName && <> &middot; service by {r.staffName}</>}
+          </p>
           {r.websiteComment && (
-            <p className="mt-3 border-t border-border/70 pt-2 text-xs text-muted">
+            <p className="mt-3 text-sm text-muted">
               On booking online: {r.websiteComment}
             </p>
           )}

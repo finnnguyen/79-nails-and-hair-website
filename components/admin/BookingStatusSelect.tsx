@@ -28,7 +28,7 @@ export default function BookingStatusSelect({
         const next = e.target.value as Enums<"booking_status">;
         startTransition(() => updateBookingStatus(bookingId, next));
       }}
-      className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground outline-none focus:border-brand disabled:opacity-50"
+      className="rounded-sm border border-border bg-surface px-3 py-1.5 text-sm text-foreground outline-none focus:border-foreground disabled:opacity-50"
     >
       {STATUSES.map((s) => (
         <option key={s} value={s}>

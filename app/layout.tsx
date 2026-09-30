@@ -1,24 +1,27 @@
 import type { Metadata } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import { Hanken_Grotesk, Newsreader } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import "./globals.css";
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
-  axes: ["opsz", "SOFT", "WONK"],
+  axes: ["opsz"],
 });
 
-const manrope = Manrope({
-  variable: "--font-manrope",
+const hanken = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "79 Nails & Hair Salon",
+  title: {
+    default: "79 Nails & Hair Salon — Fullerton, CA",
+    template: "%s · 79 Nails & Hair",
+  },
   description:
-    "Book nail and hair appointments with the stylists at 79 Nails & Hair Salon.",
+    "Nail, hair, and facial services on N Raymond Ave in Fullerton. See prices, meet the team, and book online.",
 };
 
 export default function RootLayout({
@@ -29,7 +32,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
+      className={`${newsreader.variable} ${hanken.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <Header />

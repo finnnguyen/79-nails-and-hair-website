@@ -26,13 +26,13 @@ export default async function AdminReviewsPage() {
 
       <ul className="mt-6 flex flex-col gap-4">
         {reviews.map((r) => (
-          <li key={r.id} className="rounded-xl border border-border bg-surface p-5">
+          <li key={r.id} className="rounded-sm border border-border bg-surface p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-foreground">{r.customer_name}</span>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-xs ${
+                    className={`rounded-sm px-2 py-0.5 text-xs ${
                       r.approved
                         ? "bg-brand-tint text-brand-dark"
                         : "border border-border text-muted"

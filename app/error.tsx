@@ -16,7 +16,7 @@ export default function Error({
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-6 py-24 text-center">
-      <h1 className="font-display text-2xl text-foreground">Something went wrong</h1>
+      <h1 className="font-display text-4xl tracking-tight text-foreground">Something went wrong</h1>
       <p className="text-sm text-muted">
         Sorry about that — please try again, or come back in a few minutes.
       </p>
@@ -25,7 +25,7 @@ export default function Error({
       )}
       <button
         onClick={() => unstable_retry()}
-        className="mt-4 rounded-full bg-brand px-7 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
+        className="mt-4 rounded-sm bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-brand"
       >
         Try again
       </button>

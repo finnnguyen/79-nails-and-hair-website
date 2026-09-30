@@ -37,20 +37,20 @@ function formatClock(iso: string) {
 function AvailabilityBadge({ availability }: { availability: RotationEntry["availability"] }) {
   if (availability.status === "free") {
     return (
-      <span className="rounded-full bg-brand-tint px-2 py-0.5 text-xs text-brand-dark">
+      <span className="rounded-sm bg-brand-tint px-2 py-0.5 text-xs text-brand-dark">
         Free
       </span>
     );
   }
   if (availability.status === "appointment-soon") {
     return (
-      <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted">
+      <span className="rounded-sm border border-border px-2 py-0.5 text-xs text-muted">
         Appt soon
       </span>
     );
   }
   return (
-    <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted">
+    <span className="rounded-sm border border-border px-2 py-0.5 text-xs text-muted">
       Busy &middot; free {formatClock(availability.freeAt)}
     </span>
   );
@@ -272,7 +272,7 @@ export default function TurnBoard({
         <button
           type="button"
           onClick={() => toggleService(s.id)}
-          className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm ${
+          className={`flex w-full items-center justify-between rounded-sm border px-3 py-2 text-left text-sm ${
             checked
               ? "border-brand bg-brand-tint"
               : "border-border bg-background hover:border-brand/40"
@@ -298,7 +298,7 @@ export default function TurnBoard({
           {rotation.map((r, i) => (
             <li
               key={r.staffId}
-              className={`flex items-center justify-between rounded-xl border p-3 ${
+              className={`flex items-center justify-between rounded-sm border p-3 ${
                 r.present ? "border-border bg-surface" : "border-border/50 bg-surface/50 opacity-60"
               }`}
             >
@@ -347,7 +347,7 @@ export default function TurnBoard({
                     &#9660;
                   </button>
                 </div>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-tint font-display text-sm text-brand">
+                <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-brand-tint font-display text-sm text-brand">
                   {r.name.charAt(0)}
                 </span>
                 <div>
@@ -371,7 +371,7 @@ export default function TurnBoard({
                       sync();
                     });
                   }}
-                  className="rounded-full border border-border px-3 py-1 text-xs text-foreground hover:border-brand/40 disabled:opacity-50"
+                  className="rounded-sm border border-border px-3 py-1 text-xs text-foreground hover:border-brand/40 disabled:opacity-50"
                 >
                   {r.present ? "Mark Away" : "Mark Present"}
                 </button>
@@ -382,7 +382,7 @@ export default function TurnBoard({
       </section>
 
       {/* Check-in */}
-      <section className="rounded-2xl border border-border bg-surface p-5">
+      <section className="rounded-sm border border-border bg-surface p-5">
         <h2 className="font-display text-lg text-foreground">Check In Walk-In</h2>
 
         <input
@@ -390,7 +390,7 @@ export default function TurnBoard({
           value={customerName}
           onChange={(e) => setCustomerName(e.target.value)}
           placeholder="Customer name (optional)"
-          className="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
+          className="mt-4 w-full rounded-sm border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-foreground"
         />
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -399,7 +399,7 @@ export default function TurnBoard({
               key={c}
               type="button"
               onClick={() => setActiveCategory(c)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+              className={`rounded-sm px-3 py-1.5 text-xs font-medium ${
                 activeCategory === c
                   ? "bg-brand text-white"
                   : "border border-border text-foreground hover:border-brand/40"
@@ -422,7 +422,7 @@ export default function TurnBoard({
         )}
 
         {selectedServices.length > 0 && (
-          <ul className="mt-4 flex flex-col gap-2 rounded-lg border border-border bg-background p-3">
+          <ul className="mt-4 flex flex-col gap-2 rounded-sm border border-border bg-background p-3">
             {selectedServices.map((s) => (
               <li key={s.id} className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-foreground">{s.name}</span>
@@ -437,7 +437,7 @@ export default function TurnBoard({
                       const value = e.target.value === "" ? 0 : Number(e.target.value);
                       setPriceOverrides((prev) => ({ ...prev, [s.id]: value }));
                     }}
-                    className="w-20 rounded-md border border-border bg-surface px-2 py-1 text-right text-foreground outline-none focus:border-brand"
+                    className="w-20 rounded-md border border-border bg-surface px-2 py-1 text-right text-foreground outline-none focus:border-foreground"
                   />
                 </label>
               </li>
@@ -462,7 +462,7 @@ export default function TurnBoard({
             <select
               value={requestedStaffId}
               onChange={(e) => setRequestedStaffId(e.target.value)}
-              className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+              className="rounded-sm border border-border bg-background px-2 py-1.5 text-sm text-foreground"
             >
               <option value="">Choose stylist&hellip;</option>
               {(selectedCategories.length > 0
@@ -481,7 +481,7 @@ export default function TurnBoard({
           type="button"
           disabled={selectedServices.length === 0 || (isRequest && !requestedStaffId)}
           onClick={() => startTransition(handleCheckIn)}
-          className="mt-4 rounded-full bg-brand px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-4 rounded-sm bg-foreground px-6 py-2 text-sm font-medium text-background transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:opacity-40"
         >
           Check In
         </button>
@@ -497,13 +497,13 @@ export default function TurnBoard({
             {queue.map((w) => {
               const candidates = eligibleStaff(w.categories).filter((r) => r.present);
               return (
-                <li key={w.id} className="rounded-xl border border-border bg-surface p-4">
+                <li key={w.id} className="rounded-sm border border-border bg-surface p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-medium text-foreground">
                         {w.customerName || "Walk-in"}{" "}
                         {w.isRequest && (
-                          <span className="ml-1 rounded-full bg-gold-tint px-2 py-0.5 text-xs text-brand-dark">
+                          <span className="ml-1 rounded-sm bg-gold-tint px-2 py-0.5 text-xs text-brand-dark">
                             By request
                           </span>
                         )}
@@ -545,7 +545,7 @@ export default function TurnBoard({
                               sync();
                             });
                           }}
-                          className="rounded-full bg-brand px-4 py-1.5 text-xs font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+                          className="rounded-sm bg-foreground px-4 py-1.5 text-xs font-medium text-background transition-colors hover:bg-brand disabled:opacity-50"
                         >
                           Complete
                         </button>
@@ -583,7 +583,7 @@ export default function TurnBoard({
                                 sync();
                               });
                             }}
-                            className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-foreground hover:border-brand/40 disabled:opacity-50"
+                            className="flex items-center gap-1.5 rounded-sm border border-border px-3 py-1 text-xs text-foreground hover:border-brand/40 disabled:opacity-50"
                           >
                             {r.name}
                             <span className="text-muted">
@@ -620,7 +620,7 @@ export default function TurnBoard({
                             sync();
                           });
                         }}
-                        className="rounded-full bg-brand px-4 py-1.5 text-xs font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+                        className="rounded-sm bg-foreground px-4 py-1.5 text-xs font-medium text-background transition-colors hover:bg-brand disabled:opacity-50"
                       >
                         Start with {w.staffName}
                       </button>
@@ -640,7 +640,7 @@ export default function TurnBoard({
         {earningsByStaff.staff.length === 0 ? (
           <p className="mt-3 text-sm text-muted">No completed turns yet today.</p>
         ) : (
-          <ul className="mt-4 flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
+          <ul className="mt-4 flex flex-col gap-2 rounded-sm border border-border bg-surface p-4">
             {earningsByStaff.staff.map((e) => (
               <li key={e.staffId} className="flex items-center justify-between text-sm">
                 <span className="text-foreground">
@@ -677,21 +677,21 @@ export default function TurnBoard({
               setAddCompletedAt(toDatetimeLocalValue(new Date()));
               setShowAddTurn((prev) => !prev);
             }}
-            className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:border-brand/40"
+            className="shrink-0 rounded-sm border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:border-brand/40"
           >
             {showAddTurn ? "Cancel" : "+ Add Turn"}
           </button>
         </div>
 
         {showAddTurn && (
-          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+          <div className="mt-4 flex flex-col gap-3 rounded-sm border border-border bg-surface p-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex flex-col gap-1 text-xs text-muted">
                 Staff
                 <select
                   value={addStaffId}
                   onChange={(e) => setAddStaffId(e.target.value)}
-                  className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                  className="rounded-sm border border-border bg-background px-2 py-1.5 text-sm text-foreground"
                 >
                   <option value="">Choose stylist&hellip;</option>
                   {rotation.map((r) => (
@@ -707,7 +707,7 @@ export default function TurnBoard({
                   type="datetime-local"
                   value={addCompletedAt}
                   onChange={(e) => setAddCompletedAt(e.target.value)}
-                  className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                  className="rounded-sm border border-border bg-background px-2 py-1.5 text-sm text-foreground"
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs text-muted">
@@ -716,7 +716,7 @@ export default function TurnBoard({
                   type="text"
                   value={addCustomerName}
                   onChange={(e) => setAddCustomerName(e.target.value)}
-                  className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground outline-none focus:border-brand"
+                  className="rounded-sm border border-border bg-background px-2 py-1.5 text-sm text-foreground outline-none focus:border-foreground"
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs text-muted">
@@ -726,7 +726,7 @@ export default function TurnBoard({
                   value={addServiceName}
                   onChange={(e) => setAddServiceName(e.target.value)}
                   placeholder="e.g. Manicure"
-                  className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground outline-none focus:border-brand"
+                  className="rounded-sm border border-border bg-background px-2 py-1.5 text-sm text-foreground outline-none focus:border-foreground"
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs text-muted">
@@ -739,7 +739,7 @@ export default function TurnBoard({
                   onChange={(e) =>
                     setAddPrice(e.target.value === "" ? 0 : Number(e.target.value))
                   }
-                  className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground outline-none focus:border-brand"
+                  className="rounded-sm border border-border bg-background px-2 py-1.5 text-sm text-foreground outline-none focus:border-foreground"
                 />
               </label>
             </div>
@@ -747,7 +747,7 @@ export default function TurnBoard({
               type="button"
               disabled={!addStaffId || !addServiceName || addPrice <= 0}
               onClick={() => startTransition(handleAddTurn)}
-              className="self-start rounded-full bg-brand px-5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+              className="self-start rounded-sm bg-foreground px-5 py-1.5 text-sm font-medium text-background transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:opacity-40"
             >
               Add Turn
             </button>
@@ -761,14 +761,14 @@ export default function TurnBoard({
             {turns.map((t) => (
               <li
                 key={t.id}
-                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm"
+                className="flex items-center justify-between gap-4 rounded-sm border border-border bg-surface px-4 py-2.5 text-sm"
               >
                 <div className="min-w-0">
                   <p className="text-foreground">
                     {formatClock(t.completedAt)} &middot;{" "}
                     <span className="font-medium">{t.staffName ?? "Unassigned"}</span>
                     {t.isRequest && (
-                      <span className="ml-1 rounded-full bg-gold-tint px-2 py-0.5 text-xs text-brand-dark">
+                      <span className="ml-1 rounded-sm bg-gold-tint px-2 py-0.5 text-xs text-brand-dark">
                         By request
                       </span>
                     )}
@@ -799,7 +799,7 @@ export default function TurnBoard({
                           sync();
                         });
                       }}
-                      className="w-20 rounded-md border border-border bg-background px-2 py-1 text-right text-foreground outline-none focus:border-brand"
+                      className="w-20 rounded-md border border-border bg-background px-2 py-1 text-right text-foreground outline-none focus:border-foreground"
                     />
                   </label>
 
@@ -845,7 +845,7 @@ export default function TurnBoard({
       </section>
 
       {pending && (
-        <div className="fixed bottom-4 left-4 rounded-full bg-foreground/80 px-3 py-1 text-xs text-background">
+        <div className="fixed bottom-4 left-4 rounded-sm bg-foreground/80 px-3 py-1 text-xs text-background">
           Syncing&hellip;
         </div>
       )}

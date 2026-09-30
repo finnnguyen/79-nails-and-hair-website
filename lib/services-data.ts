@@ -21,6 +21,13 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
   "Facial Services",
 ];
 
+/** Short display names for tabs and headings. */
+export const CATEGORY_LABELS: Record<ServiceCategory, string> = {
+  "Nail Services": "Nails",
+  "Hair Services": "Hair",
+  "Facial Services": "Facials & waxing",
+};
+
 export async function getServices(): Promise<Service[]> {
   const { data, error } = await supabase
     .from("services")

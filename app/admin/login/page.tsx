@@ -18,7 +18,7 @@ export default function AdminLoginPage() {
             type="email"
             name="email"
             required
-            className="rounded-lg border border-border bg-surface px-3 py-2.5 text-foreground outline-none focus:border-brand"
+            className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none focus:border-foreground"
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm">
@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
             type="password"
             name="password"
             required
-            className="rounded-lg border border-border bg-surface px-3 py-2.5 text-foreground outline-none focus:border-brand"
+            className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none focus:border-foreground"
           />
         </label>
 
@@ -36,7 +36,7 @@ export default function AdminLoginPage() {
         <button
           type="submit"
           disabled={pending}
-          className="mt-2 rounded-full bg-brand px-7 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-2 rounded-sm bg-foreground px-7 py-2.5 text-sm font-medium text-background transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:opacity-40"
         >
           {pending ? "Signing in…" : "Sign In"}
         </button>

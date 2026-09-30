@@ -16,18 +16,25 @@ function StarPicker({
   return (
     <div>
       <span className="block text-sm text-foreground">{label}</span>
-      <div className="mt-1.5 flex gap-1">
+      <div className="mt-2 flex gap-0.5">
         {[1, 2, 3, 4, 5].map((n) => (
           <button
             key={n}
             type="button"
             onClick={() => onChange(n)}
             aria-label={`${n} star${n > 1 ? "s" : ""}`}
-            className={`text-2xl leading-none ${
-              n <= value ? "text-brand" : "text-border"
-            }`}
+            aria-pressed={n <= value}
+            className="p-0.5"
           >
-            ★
+            <svg
+              viewBox="0 0 20 20"
+              aria-hidden
+              className={`h-6 w-6 transition-colors ${
+                n <= value ? "fill-brand" : "fill-border hover:fill-brand/40"
+              }`}
+            >
+              <path d="M10 1.5l2.6 5.3 5.9.9-4.25 4.1 1 5.8L10 14.9l-5.25 2.7 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
+            </svg>
           </button>
         ))}
       </div>
@@ -50,10 +57,10 @@ export default function ReviewForm({ staff }: { staff: Staff[] }) {
 
   if (submitted) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-8 text-center">
-        <h2 className="font-display text-xl text-foreground">Thank you!</h2>
+      <div className="border border-border bg-surface p-8">
+        <h2 className="font-display text-2xl text-foreground">Thank you.</h2>
         <p className="mt-2 text-sm text-muted">
-          Your feedback helps us improve — we appreciate you taking the time.
+          Your review will appear here once it has been approved.
         </p>
       </div>
     );
@@ -81,9 +88,9 @@ export default function ReviewForm({ staff }: { staff: Staff[] }) {
           setError(result.error);
         }
       }}
-      className="rounded-2xl border border-border bg-surface p-6"
+      className="border border-border bg-surface p-7"
     >
-      <h2 className="font-display text-xl text-foreground">Leave Feedback</h2>
+      <h2 className="font-display text-2xl text-foreground">Leave a review</h2>
       <p className="mt-1 text-sm text-muted">
         Tell us about your visit and your experience booking online.
       </p>
@@ -95,8 +102,8 @@ export default function ReviewForm({ staff }: { staff: Staff[] }) {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-lg border border-border bg-background px-3 py-2.5 text-foreground outline-none focus:border-brand"
-            placeholder="Jane Doe"
+            className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
+            placeholder="Your name"
           />
         </label>
 
@@ -105,7 +112,7 @@ export default function ReviewForm({ staff }: { staff: Staff[] }) {
           <select
             value={staffId}
             onChange={(e) => setStaffId(e.target.value)}
-            className="rounded-lg border border-border bg-background px-3 py-2.5 text-foreground outline-none focus:border-brand"
+            className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
           >
             <option value="">Not sure / prefer not to say</option>
             {staff.map((s) => (
@@ -123,12 +130,12 @@ export default function ReviewForm({ staff }: { staff: Staff[] }) {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={3}
-            className="rounded-lg border border-border bg-background px-3 py-2.5 text-foreground outline-none focus:border-brand"
+            className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
             placeholder="What did you love? What could be better?"
           />
         </label>
 
-        <hr className="border-border/70" />
+        <hr className="border-border" />
 
         <StarPicker
           label="How was booking on our website? (optional)"
@@ -141,7 +148,7 @@ export default function ReviewForm({ staff }: { staff: Staff[] }) {
             value={websiteComment}
             onChange={(e) => setWebsiteComment(e.target.value)}
             rows={3}
-            className="rounded-lg border border-border bg-background px-3 py-2.5 text-foreground outline-none focus:border-brand"
+            className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
             placeholder="Was it easy to find a time and book?"
           />
         </label>
@@ -151,9 +158,9 @@ export default function ReviewForm({ staff }: { staff: Staff[] }) {
         <button
           type="submit"
           disabled={!canSubmit || submitting}
-          className="self-start rounded-full bg-brand px-7 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-sm bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {submitting ? "Submitting…" : "Submit Feedback"}
+          {submitting ? "Submitting…" : "Submit review"}
         </button>
       </div>
     </form>

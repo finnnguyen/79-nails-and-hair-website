@@ -18,7 +18,7 @@ export default function ReviewApprovalControls({
         type="button"
         disabled={pending}
         onClick={() => startTransition(() => setReviewApproval(reviewId, !approved))}
-        className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:border-brand/40 disabled:opacity-50"
+        className="rounded-sm border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:border-brand/40 disabled:opacity-50"
       >
         {approved ? "Unapprove" : "Approve"}
       </button>
@@ -30,7 +30,7 @@ export default function ReviewApprovalControls({
             startTransition(() => deleteReview(reviewId));
           }
         }}
-        className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-red-600 hover:border-red-300 disabled:opacity-50"
+        className="rounded-sm border border-border px-3 py-1.5 text-xs font-medium text-red-600 hover:border-red-300 disabled:opacity-50"
       >
         Delete
       </button>
