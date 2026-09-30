@@ -25,7 +25,7 @@ export default async function BookPage({
     : undefined;
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-20">
+    <div className="mx-auto max-w-6xl px-6 py-16 md:py-20">
       <BookingWizard
         services={services}
         staff={staff}

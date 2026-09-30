@@ -28,6 +28,13 @@ export const CATEGORY_LABELS: Record<ServiceCategory, string> = {
   "Facial Services": "Facials & waxing",
 };
 
+export function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m ? `${h} hr ${m} min` : `${h} hr`;
+}
+
 export async function getServices(): Promise<Service[]> {
   const { data, error } = await supabase
     .from("services")

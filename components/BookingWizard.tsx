@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CATEGORY_LABELS,
+  formatDuration,
   SERVICE_CATEGORIES,
   type Service,
   type ServiceCategory,
@@ -150,7 +151,12 @@ export default function BookingWizard({
               </svg>
             )}
           </span>
-          <span className="flex-1 text-sm text-foreground">{s.name}</span>
+          <span className="flex-1">
+            <span className="block text-sm text-foreground">{s.name}</span>
+            <span className="block text-xs text-muted">
+              {formatDuration(durationOverrides[s.id] ?? s.durationMinutes)}
+            </span>
+          </span>
           <span className="whitespace-nowrap text-sm tabular-nums text-muted">
             ${s.price}
             {s.startingAt && "+"}
@@ -254,299 +260,357 @@ export default function BookingWizard({
         {STEPS[step]}
       </h2>
 
-      {step === 0 && (
-        <div>
-          <div role="tablist" className="flex gap-8 overflow-x-auto border-b border-border">
-            {SERVICE_CATEGORIES.map((category) => (
-              <button
-                key={category}
-                type="button"
-                role="tab"
-                aria-selected={activeCategory === category}
-                onClick={() => setActiveCategory(category)}
-                className={`-mb-px whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors ${
-                  activeCategory === category
-                    ? "border-foreground text-foreground"
-                    : "border-transparent text-muted hover:text-foreground"
-                }`}
-              >
-                {CATEGORY_LABELS[category]}
-              </button>
-            ))}
-          </div>
-
-          <ul className="mt-6 grid gap-2 sm:grid-cols-2">
-            {coreServices.map(renderServiceOption)}
-          </ul>
-
-          {addonServices.length > 0 && (
-            <>
-              <p className="mb-3 mt-8 text-xs font-medium uppercase tracking-[0.16em] text-muted">
-                Add-ons
-              </p>
-              <ul className="grid gap-2 sm:grid-cols-2">
-                {addonServices.map(renderServiceOption)}
-              </ul>
-            </>
-          )}
-
-          {selectedServices.length > 0 && (
-            <div className="mt-8 border border-border bg-surface p-5">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-medium text-foreground">
-                  {selectedServices.length} service
-                  {selectedServices.length > 1 && "s"} selected
-                </p>
-                <p className="text-sm tabular-nums text-foreground">
-                  {hasStartingAt && "from "}${total}
-                </p>
-              </div>
-              <ul className="flex flex-wrap gap-1.5">
-                {selectedServices.map((s) => (
-                  <li key={s.id}>
-                    <button
-                      type="button"
-                      onClick={() => toggleService(s.id)}
-                      className="flex items-center gap-1.5 rounded-sm border border-border px-2.5 py-1 text-xs text-foreground hover:border-foreground"
-                    >
-                      {s.name}
-                      <span aria-hidden>&times;</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-
-      {step === 1 && selectedServices.length > 0 && (
-        <div>
-          <p className="mb-6 text-sm text-muted">
-            Staff available for {selectedServices.map((s) => s.name).join(", ")}
-          </p>
-          {eligibleStaff.length === 0 ? (
-            <p className="border border-border bg-surface p-5 text-sm text-muted">
-              No single staff member covers all selected services — try
-              splitting this into separate visits, or remove a service.
-            </p>
-          ) : (
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {eligibleStaff.map((member) => (
-                <li key={member.id}>
+      <div className="grid gap-10 lg:grid-cols-[1fr_300px] lg:gap-12">
+        <div className="min-w-0">
+          {step === 0 && (
+            <div>
+              <div role="tablist" className="flex gap-8 overflow-x-auto border-b border-border">
+                {SERVICE_CATEGORIES.map((category) => (
                   <button
+                    key={category}
                     type="button"
-                    onClick={() => {
-                      setStaffId(member.id);
-                      setDate(null);
-                      setTime(null);
-                    }}
-                    aria-pressed={staffId === member.id}
-                    className={`flex w-full items-center gap-4 rounded-sm border bg-surface p-4 text-left transition-colors ${
-                      staffId === member.id
-                        ? "border-foreground"
-                        : "border-border hover:border-muted/60"
+                    role="tab"
+                    aria-selected={activeCategory === category}
+                    onClick={() => setActiveCategory(category)}
+                    className={`-mb-px whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors ${
+                      activeCategory === category
+                        ? "border-foreground text-foreground"
+                        : "border-transparent text-muted hover:text-foreground"
                     }`}
                   >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center border border-border bg-background font-display text-xl text-foreground">
-                      {member.name.charAt(0)}
-                    </span>
-                    <span>
-                      <span className="block text-foreground">
-                        {member.name}
-                      </span>
-                      <span className="block text-sm text-muted">
-                        {member.role}
-                      </span>
-                    </span>
+                    {CATEGORY_LABELS[category]}
                   </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+                ))}
+              </div>
 
-      {step === 2 && (
-        <div className="grid gap-8 md:grid-cols-[auto_1fr] md:items-start">
-          <CalendarPicker
-            availability={availability}
-            selectedDate={date}
-            onSelect={(d) => {
-              setDate(d);
-              setTime(null);
-            }}
-          />
+              <ul className="mt-6 grid gap-2 sm:grid-cols-2">
+                {coreServices.map(renderServiceOption)}
+              </ul>
 
-          <div>
-            {selectedDay ? (
-              <>
-                <p className="mb-3 text-sm text-muted">
-                  Available times &middot;{" "}
-                  <span className="text-foreground">{selectedDay.label}</span>
-                </p>
-                <div className="grid max-h-80 grid-cols-3 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-4">
-                  {selectedDay.times.map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setTime(t)}
-                      aria-pressed={time === t}
-                      className={`rounded-sm border px-2 py-2.5 text-center text-sm tabular-nums transition-colors ${
-                        time === t
-                          ? "border-foreground bg-foreground text-background"
-                          : "border-border bg-surface text-foreground hover:border-muted/60"
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
+              {addonServices.length > 0 && (
+                <>
+                  <p className="mb-3 mt-8 text-xs font-medium uppercase tracking-[0.16em] text-muted">
+                    Add-ons
+                  </p>
+                  <ul className="grid gap-2 sm:grid-cols-2">
+                    {addonServices.map(renderServiceOption)}
+                  </ul>
+                </>
+              )}
+
+              {selectedServices.length > 0 && (
+                <div className="mt-8 border border-border bg-surface p-5 lg:hidden">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedServices.length} service
+                      {selectedServices.length > 1 && "s"} selected
+                    </p>
+                    <p className="text-sm tabular-nums text-foreground">
+                      {hasStartingAt && "from "}${total}
+                    </p>
+                  </div>
+                  <ul className="flex flex-wrap gap-1.5">
+                    {selectedServices.map((s) => (
+                      <li key={s.id}>
+                        <button
+                          type="button"
+                          onClick={() => toggleService(s.id)}
+                          className="flex items-center gap-1.5 rounded-sm border border-border px-2.5 py-1 text-xs text-foreground hover:border-foreground"
+                        >
+                          {s.name}
+                          <span aria-hidden>&times;</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </>
-            ) : (
-              <p className="border border-dashed border-border p-6 text-center text-sm text-muted">
-                Pick a date to see available times
+              )}
+            </div>
+          )}
+
+          {step === 1 && selectedServices.length > 0 && (
+            <div>
+              <p className="mb-6 text-sm text-muted">
+                Staff available for {selectedServices.map((s) => s.name).join(", ")}
               </p>
+              {eligibleStaff.length === 0 ? (
+                <p className="border border-border bg-surface p-5 text-sm text-muted">
+                  No single staff member covers all selected services — try
+                  splitting this into separate visits, or remove a service.
+                </p>
+              ) : (
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {eligibleStaff.map((member) => (
+                    <li key={member.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStaffId(member.id);
+                          setDate(null);
+                          setTime(null);
+                        }}
+                        aria-pressed={staffId === member.id}
+                        className={`flex w-full items-center gap-4 rounded-sm border bg-surface p-4 text-left transition-colors ${
+                          staffId === member.id
+                            ? "border-foreground"
+                            : "border-border hover:border-muted/60"
+                        }`}
+                      >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center border border-border bg-background font-display text-xl text-foreground">
+                          {member.name.charAt(0)}
+                        </span>
+                        <span>
+                          <span className="block text-foreground">
+                            {member.name}
+                          </span>
+                          <span className="block text-sm text-muted">
+                            {member.role}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="grid gap-8 md:grid-cols-[auto_1fr] md:items-start">
+              <CalendarPicker
+                availability={availability}
+                selectedDate={date}
+                onSelect={(d) => {
+                  setDate(d);
+                  setTime(null);
+                }}
+              />
+
+              <div>
+                {selectedDay ? (
+                  <>
+                    <p className="mb-3 text-sm text-muted">
+                      Available times &middot;{" "}
+                      <span className="text-foreground">{selectedDay.label}</span>
+                    </p>
+                    <div className="grid max-h-80 grid-cols-3 gap-1.5 overflow-y-auto pr-1">
+                      {selectedDay.times.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setTime(t)}
+                          aria-pressed={time === t}
+                          className={`rounded-sm border px-2 py-2.5 text-center text-sm tabular-nums transition-colors ${
+                            time === t
+                              ? "border-foreground bg-foreground text-background"
+                              : "border-border bg-surface text-foreground hover:border-muted/60"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="border border-dashed border-border p-6 text-center text-sm text-muted">
+                    Pick a date to see available times
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <div className="mb-8 border border-border bg-surface p-5 text-sm lg:hidden">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
+                  Summary
+                </p>
+                <ul className="mt-3 space-y-1">
+                  {selectedServices.map((s) => (
+                    <li key={s.id} className="flex justify-between text-foreground">
+                      <span>{s.name}</span>
+                      <span className="tabular-nums text-muted">
+                        ${s.price}
+                        {s.startingAt && "+"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-muted">
+                  with {selectedStaff?.name} &middot; {selectedDay?.label} at{" "}
+                  {time}
+                </p>
+                <p className="mt-3 flex justify-between border-t border-border pt-3 font-medium text-foreground">
+                  <span>Total</span>
+                  <span>
+                    {hasStartingAt && "from "}${total}
+                  </span>
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
+                  <span className="text-foreground">Name</span>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
+                    placeholder="Your name"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5 text-sm">
+                  <span className="text-foreground">Phone</span>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
+                    placeholder="(714) 555-0179"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5 text-sm">
+                  <span className="text-foreground">Email</span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
+                    placeholder="you@example.com"
+                  />
+                </label>
+                <p className="text-xs text-muted sm:col-span-2">
+                  Phone or email — at least one so we can confirm your booking.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-10 flex items-center justify-between border-t border-border pt-6">
+            <button
+              type="button"
+              onClick={goBack}
+              disabled={step === 0}
+              className="py-3 text-sm font-medium text-muted transition-colors hover:text-foreground disabled:invisible"
+            >
+              &larr; Back
+            </button>
+            {step < STEPS.length - 1 ? (
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!canContinue}
+                className="rounded-sm bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                Continue
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!selectedStaff || !date || !time) return;
+                  setSubmitting(true);
+                  setSubmitError(null);
+                  const result = await submitBooking({
+                    name,
+                    email,
+                    phone,
+                    staffId: selectedStaff.id,
+                    staffName: selectedStaff.name,
+                    date,
+                    time,
+                    services: selectedServices.map((s) => ({
+                      id: s.id,
+                      name: s.name,
+                      price: s.price,
+                    })),
+                  });
+                  setSubmitting(false);
+                  if (result.success) {
+                    setSubmitted(true);
+                  } else {
+                    setSubmitError(
+                      result.slotTaken
+                        ? result.error
+                        : `Something went wrong: ${result.error}. Please try again.`
+                    );
+                    if (result.slotTaken && staffId) {
+                      setTime(null);
+                      setStep(2);
+                      getBookedRanges(staffId)
+                        .then(setBookedRanges)
+                        .catch(() => setBookedRanges([]));
+                    }
+                  }
+                }}
+                disabled={!canContinue || submitting}
+                className="rounded-sm bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                {submitting ? "Booking…" : "Request appointment"}
+              </button>
             )}
           </div>
-        </div>
-      )}
 
-      {step === 3 && (
-        <div>
-          <div className="mb-8 border border-border bg-surface p-5 text-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
-              Summary
+          {submitError && (
+            <p className="mt-4 text-right text-sm text-red-600">{submitError}</p>
+          )}
+        </div>
+
+        <aside className="hidden lg:block">
+          <div className="sticky top-24 border border-border bg-surface">
+            <p className="border-b border-border px-5 py-4 font-display text-xl text-foreground">
+              Your appointment
             </p>
-            <ul className="mt-3 space-y-1">
-              {selectedServices.map((s) => (
-                <li key={s.id} className="flex justify-between text-foreground">
-                  <span>{s.name}</span>
-                  <span className="tabular-nums text-muted">
-                    ${s.price}
-                    {s.startingAt && "+"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 text-muted">
-              with {selectedStaff?.name} &middot; {selectedDay?.label} at{" "}
-              {time}
-            </p>
-            <p className="mt-3 flex justify-between border-t border-border pt-3 font-medium text-foreground">
-              <span>Total</span>
-              <span>
-                {hasStartingAt && "from "}${total}
+            <dl className="divide-y divide-border text-sm">
+              <div className="px-5 py-4">
+                <dt className="text-xs uppercase tracking-[0.16em] text-muted">Services</dt>
+                <dd className="mt-2">
+                  {selectedServices.length === 0 ? (
+                    <span className="text-muted">None selected yet</span>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {selectedServices.map((s) => (
+                        <li key={s.id} className="flex justify-between gap-3 text-foreground">
+                          <span>{s.name}</span>
+                          <span className="tabular-nums text-muted">
+                            ${s.price}
+                            {s.startingAt && "+"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </dd>
+              </div>
+              <div className="px-5 py-4">
+                <dt className="text-xs uppercase tracking-[0.16em] text-muted">With</dt>
+                <dd className="mt-2 text-foreground">
+                  {selectedStaff?.name ?? <span className="text-muted">—</span>}
+                </dd>
+              </div>
+              <div className="px-5 py-4">
+                <dt className="text-xs uppercase tracking-[0.16em] text-muted">When</dt>
+                <dd className="mt-2 text-foreground">
+                  {selectedDay && time ? (
+                    `${selectedDay.label} at ${time}`
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </dd>
+              </div>
+            </dl>
+            <div className="flex items-baseline justify-between border-t border-border bg-background px-5 py-4">
+              <span className="text-sm text-muted">
+                {selectedServices.length > 0 ? `About ${formatDuration(totalDuration)}` : "Total"}
               </span>
-            </p>
+              <span className="font-display text-2xl tabular-nums text-foreground">
+                {hasStartingAt && <span className="mr-1 text-sm text-muted">from</span>}${total}
+              </span>
+            </div>
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
-              <span className="text-foreground">Name</span>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
-                placeholder="Your name"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span className="text-foreground">Phone</span>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
-                placeholder="(714) 555-0179"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span className="text-foreground">Email</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="rounded-sm border border-border bg-surface px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-foreground"
-                placeholder="you@example.com"
-              />
-            </label>
-            <p className="text-xs text-muted sm:col-span-2">
-              Phone or email — at least one so we can confirm your booking.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="mt-10 flex items-center justify-between border-t border-border pt-6">
-        <button
-          type="button"
-          onClick={goBack}
-          disabled={step === 0}
-          className="py-3 text-sm font-medium text-muted transition-colors hover:text-foreground disabled:invisible"
-        >
-          &larr; Back
-        </button>
-        {step < STEPS.length - 1 ? (
-          <button
-            type="button"
-            onClick={goNext}
-            disabled={!canContinue}
-            className="rounded-sm bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:opacity-30"
-          >
-            Continue
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={async () => {
-              if (!selectedStaff || !date || !time) return;
-              setSubmitting(true);
-              setSubmitError(null);
-              const result = await submitBooking({
-                name,
-                email,
-                phone,
-                staffId: selectedStaff.id,
-                staffName: selectedStaff.name,
-                date,
-                time,
-                services: selectedServices.map((s) => ({
-                  id: s.id,
-                  name: s.name,
-                  price: s.price,
-                })),
-              });
-              setSubmitting(false);
-              if (result.success) {
-                setSubmitted(true);
-              } else {
-                setSubmitError(
-                  result.slotTaken
-                    ? result.error
-                    : `Something went wrong: ${result.error}. Please try again.`
-                );
-                if (result.slotTaken && staffId) {
-                  setTime(null);
-                  setStep(2);
-                  getBookedRanges(staffId)
-                    .then(setBookedRanges)
-                    .catch(() => setBookedRanges([]));
-                }
-              }
-            }}
-            disabled={!canContinue || submitting}
-            className="rounded-sm bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:opacity-30"
-          >
-            {submitting ? "Booking…" : "Request appointment"}
-          </button>
-        )}
+        </aside>
       </div>
-
-      {submitError && (
-        <p className="mt-4 text-right text-sm text-red-600">{submitError}</p>
-      )}
     </div>
   );
 }

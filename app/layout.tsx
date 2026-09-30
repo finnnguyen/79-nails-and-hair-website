@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Hanken_Grotesk, Newsreader } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import MobileBookBar from "@/components/MobileBookBar";
 import "./globals.css";
 
 const newsreader = Newsreader({
@@ -38,6 +39,7 @@ export default function RootLayout({
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <MobileBookBar />
       </body>
     </html>
   );

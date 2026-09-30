@@ -50,3 +50,18 @@ body {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none; }
+}
+
+details > summary::-webkit-details-marker { display: none; }
