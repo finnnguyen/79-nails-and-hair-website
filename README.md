@@ -126,6 +126,14 @@ Installed via the Vercel Marketplace, connected to the `79nailsandhair` project 
 
 `app/error.tsx` and `app/global-error.tsx` report client/render errors via `Sentry.captureException`; `instrumentation.ts` reports server errors via `onRequestError`. Dashboard: [79-nails-and-hair.sentry.io](https://79-nails-and-hair.sentry.io) (sign in with the same GitHub account as this repo — see Vercel's integration page if login ever needs re-linking).
 
+## Product Analytics (PostHog)
+
+`instrumentation-client.ts` starts PostHog only when `NEXT_PUBLIC_POSTHOG_KEY` is set (Vercel env var, Production), so local dev sends nothing. `NEXT_PUBLIC_POSTHOG_HOST` is optional and defaults to the US cloud (`https://us.i.posthog.com`).
+
+- **Page views** are captured automatically, including client-side navigations.
+- **Booking funnel:** `components/BookingWizard.tsx` sends `booking_step_viewed` (`step`, `step_name`), `booking_submitted` (`service_count`, `total_price`), and `booking_failed` (`slot_taken`). No customer name, phone, or email is ever attached to an event.
+- **Privacy:** session replays mask every form input, and the booking confirmation card is masked via `ph-no-capture`. Events from `/admin` pages are dropped.
+
 ## Project Structure
 
 - `app/` — routes (App Router). `app/admin/(protected)/` is gated by `proxy.ts` + a per-layout auth check.

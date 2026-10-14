@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import posthog from "posthog-js";
 import {
   CATEGORY_LABELS,
   formatDuration,
@@ -19,6 +20,12 @@ import {
 } from "@/lib/actions/availability";
 
 const STEPS = ["Service", "Staff", "Date & Time", "Your Info"] as const;
+
+// Funnel analytics. No-op unless PostHog was initialized (see
+// instrumentation-client.ts). Never pass customer name, phone, or email.
+function track(event: string, properties?: Record<string, unknown>) {
+  if (posthog.__loaded) posthog.capture(event, properties);
+}
 
 type Props = {
   services: Service[];
@@ -200,12 +207,16 @@ export default function BookingWizard({
     }
   }, [step]);
 
+  useEffect(() => {
+    track("booking_step_viewed", { step: step + 1, step_name: STEPS[step] });
+  }, [step]);
+
   const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-lg border border-border bg-surface p-6 wrap-anywhere sm:p-8 md:p-10">
+      <div className="ph-no-capture mx-auto max-w-lg border border-border bg-surface p-6 wrap-anywhere sm:p-8 md:p-10">
         <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
           Request sent
         </p>
@@ -528,8 +539,13 @@ export default function BookingWizard({
                   });
                   setSubmitting(false);
                   if (result.success) {
+                    track("booking_submitted", {
+                      service_count: selectedServices.length,
+                      total_price: total,
+                    });
                     setSubmitted(true);
                   } else {
+                    track("booking_failed", { slot_taken: Boolean(result.slotTaken) });
                     setSubmitError(
                       result.slotTaken
                         ? result.error
