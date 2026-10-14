@@ -16,7 +16,7 @@ export default async function StaffPage() {
         Tap a specialty to book it with that person directly.
       </PageHeader>
 
-      <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid gap-3 sm:mt-10 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
         {staff.map((member) => (
           <StaffCard key={member.id} staff={member} />
         ))}

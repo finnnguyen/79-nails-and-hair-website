@@ -205,7 +205,7 @@ export default function BookingWizard({
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-lg border border-border bg-surface p-8 md:p-10">
+      <div className="mx-auto max-w-lg border border-border bg-surface p-6 wrap-anywhere sm:p-8 md:p-10">
         <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
           Request sent
         </p>
@@ -220,8 +220,8 @@ export default function BookingWizard({
         </p>
         <ul className="mt-6 divide-y divide-border border-t border-border text-sm text-foreground">
           {selectedServices.map((s) => (
-            <li key={s.id} className="flex justify-between py-2.5">
-              <span>{s.name}</span>
+            <li key={s.id} className="flex justify-between gap-4 py-2.5">
+              <span className="min-w-0">{s.name}</span>
               <span className="tabular-nums text-muted">
                 ${s.price}
                 {s.startingAt && "+"}
